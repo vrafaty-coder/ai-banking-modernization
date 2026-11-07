@@ -1,0 +1,21 @@
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.o
+
+# Python virtual environments
+venv/
+.venv/
+
+# Generated runtime data
+*.dat
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
