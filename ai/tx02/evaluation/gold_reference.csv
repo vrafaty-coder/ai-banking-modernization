@@ -1,0 +1,18 @@
+﻿id,category,rule_description,condition,action
+BR-TX02-001,BUSINESS,Reject zero withdrawal amount,RCV-AMOUNT = 0,1004 Invalid amount; return
+BR-TX02-002,BUSINESS,Account must exist,Account READ file status 23,1001 Account not found; return
+BR-TX02-003,BUSINESS,Reject blocked account,ACC-BLOCKED (status B),1002 Account blocked; return
+BR-TX02-004,BUSINESS,Reject closed account,ACC-CLOSED (status C),1003 Account closed; return
+BR-TX02-005,BUSINESS,Reject other non-active account status,Not ACC-ACTIVE after blocked/closed checks,9001 Invalid account status; return
+BR-TX02-006,BUSINESS,Reject withdrawal exceeding available balance,ACC-BALANCE < RCV-AMOUNT,1007 Insufficient funds; no balance update
+BR-TX02-007,BUSINESS,Check computed balance against 15-digit maximum,WS-NEW-BALANCE > 999999999999999,1005 Balance overflow; return
+BR-TX02-008,BUSINESS,Successful withdrawal decreases account balance and returns success,"Valid active account, amount positive, sufficient funds, successful file operations","New balance = old balance - amount; response status 0, alert 0, balance and stamp"
+INT-TX02-001,INTEGRITY,Journal debit entry on successful withdrawal,Account rewrite succeeded; journal write attempted,Initialize journal; stamp and TX02 code; debit account=request account; amount=request amount; credit account remains initialized; write journal
+INT-TX02-002,INTEGRITY,Choose unique journal stamp,Candidate stamp from date+time+terminal+4-digit sequence; journal READ collision,Increment sequence until unused stamp; at 9999 collision raise 1006 Journal stamp exhausted
+INT-TX02-003,INTEGRITY,Attempt account rollback on journal write failure,Journal write fails after successful account rewrite,"9002 Journal write error; read account; if read succeeds, restore old balance and rewrite; rollback outcome is not separately reported"
+TECH-TX02-001,TECHNICAL,Account open failure,ACCOUNT-FILE OPEN status not 00,9001 Account file error; return
+TECH-TX02-002,TECHNICAL,Journal open failure,JOURNAL-FILE OPEN status not 00,9002 Journal file error; close open files; return
+TECH-TX02-003,TECHNICAL,Unexpected account read failure,Account READ status other than 00 or 23,9001 Account file error; return
+TECH-TX02-004,TECHNICAL,Account rewrite failure,ACCOUNT-RECORD REWRITE status not 00,9001 Account update error; return
+TECH-TX02-005,TECHNICAL,Journal stamp lookup I/O failure,Journal lookup READ status other than 00 or 23,9002 Journal file error; exit stamp search before account rewrite
+TECH-TX02-006,TECHNICAL,Journal write failure,JOURNAL-RECORD WRITE status not 00 after account rewrite,9002 Journal write error; attempt account rollback

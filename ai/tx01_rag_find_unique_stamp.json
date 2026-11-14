@@ -1,0 +1,30 @@
+[
+  {
+    "rule_description": "Validate unique stamp and handle journal status when stamp is not found",
+    "condition": "WS-JRN-STATUS is equal to \"23\"",
+    "action": "Set WS-STAMP-FOUND to 1",
+    "evidence": "when \"23\" move 1 to WS-STAMP-FOUND",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Validate unique stamp and handle journal status when stamp already exists and sequence is exhausted",
+    "condition": "WS-JRN-STATUS is equal to \"00\" and WS-SEQUENCE is equal to 9999",
+    "action": "Set RSP-ALERT-CODE to 1006, move \"Journal stamp exhausted\" to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "when \"00\" if WS-SEQUENCE = 9999 move 1006 to RSP-ALERT-CODE move \"Journal stamp exhausted\" to RSP-ALERT-MESSAGE exit perform end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Validate unique stamp and increment sequence when stamp already exists and sequence is not exhausted",
+    "condition": "WS-JRN-STATUS is equal to \"00\" and WS-SEQUENCE is not equal to 9999",
+    "action": "Add 1 to WS-SEQUENCE",
+    "evidence": "when \"00\" ... add 1 to WS-SEQUENCE",
+    "category": "INTEGRITY"
+  },
+  {
+    "rule_description": "Handle unexpected journal file errors during stamp uniqueness check",
+    "condition": "WS-JRN-STATUS is not \"23\" and not \"00\"",
+    "action": "Set RSP-ALERT-CODE to 9002, move \"Journal file error\" to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "when other move 9002 to RSP-ALERT-CODE move \"Journal file error\" to RSP-ALERT-MESSAGE exit perform",
+    "category": "TECHNICAL"
+  }
+]

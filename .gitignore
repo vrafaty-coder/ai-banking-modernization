@@ -1,0 +1,43 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.class
+*.exe
+*.dll
+*.so
+*.o
+*.obj
+.DS_Store
+.idea/
+.vscode/
+# Test data and private credentials must not be committed
+*.key
+*.pem
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration and credentials
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials.json
+secrets.json
+
+# Operating-system temporary files
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Local runtime files
+*.log

@@ -1,0 +1,404 @@
+{
+  "title": "TX01 Deposit — Reference Rules (Frozen v1.0)",
+  "status": "frozen_v1.0",
+  "source_baseline": "TX01.cbl and six copybooks (uploaded versions)",
+  "source_sha256": "661d2fb45093f9c02654b5c4a00ef7a70c7a4d1dc20ff53cee9247f0644c7f2c",
+  "provenance": "15 previously discussed and user-reviewed rules; assistant-assisted reference construction; not independently blinded expert annotation.",
+  "evaluation_policy": "BUSINESS primary; INTEGRITY and TECHNICAL supplemental. Freeze before calculating model metrics.",
+  "rule_count": 15,
+  "rules": [
+    {
+      "id": "BR-TX01-001",
+      "category": "BUSINESS",
+      "rule_description": "Reject zero deposit amount",
+      "condition": "RCV-AMOUNT = 0",
+      "action": "Alert 1004; Invalid amount; GOBACK",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 64,
+          "snippet": "if RCV-AMOUNT = 0"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 65,
+          "snippet": "move 1004 to RSP-ALERT-CODE"
+        }
+      ],
+      "dependencies": [
+        "TX01-RECEIVE.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-002",
+      "category": "BUSINESS",
+      "rule_description": "Account must exist",
+      "condition": "ACCOUNT-FILE READ returns status 23",
+      "action": "Alert 1001; Account not found; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 93,
+          "snippet": "when \"23\""
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 94,
+          "snippet": "move 1001 to RSP-ALERT-CODE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "TX01-RECEIVE.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-003",
+      "category": "BUSINESS",
+      "rule_description": "Reject blocked account",
+      "condition": "ACC-BLOCKED",
+      "action": "Alert 1002; Account blocked; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 106,
+          "snippet": "when ACC-BLOCKED"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 107,
+          "snippet": "move 1002 to RSP-ALERT-CODE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-004",
+      "category": "BUSINESS",
+      "rule_description": "Reject closed account",
+      "condition": "ACC-CLOSED",
+      "action": "Alert 1003; Account closed; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 109,
+          "snippet": "when ACC-CLOSED"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 110,
+          "snippet": "move 1003 to RSP-ALERT-CODE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-005",
+      "category": "BUSINESS",
+      "rule_description": "Reject non-active account status",
+      "condition": "NOT ACC-ACTIVE, after blocked and closed checks",
+      "action": "Alert 9001; Invalid account status; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 112,
+          "snippet": "when not ACC-ACTIVE"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 114,
+          "snippet": "move \"Invalid account status\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-006",
+      "category": "BUSINESS",
+      "rule_description": "Prevent 15-digit account balance overflow",
+      "condition": "WS-NEW-BALANCE > 999999999999999",
+      "action": "Alert 1005; Balance overflow; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 123,
+          "snippet": "compute WS-NEW-BALANCE ="
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 126,
+          "snippet": "if WS-NEW-BALANCE > 999999999999999"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "TX01-RECEIVE.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "BR-TX01-007",
+      "category": "BUSINESS",
+      "rule_description": "Complete successful deposit",
+      "condition": "Valid request and account, available journal stamp, successful account REWRITE and journal WRITE",
+      "action": "Increase account balance; write one TX01 journal record; return status 00, alert 0000, resulting balance and stamp only if both writes succeed.",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 140,
+          "snippet": "move WS-NEW-BALANCE to ACC-BALANCE"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 158,
+          "snippet": "write JOURNAL-RECORD"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 171,
+          "snippet": "move WS-NEW-BALANCE to RSP-ACCOUNT-BALANCE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "JOURNAL-RECORD.cpy",
+        "TX01-RESPONSE.cpy",
+        "COMMON-RESPONSE.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "INT-TX01-001",
+      "category": "INTEGRITY",
+      "rule_description": "Attempt account rollback on journal write error",
+      "condition": "WS-JRN-STATUS not = 00 after WRITE",
+      "action": "Set alert 9002, attempt ROLLBACK-ACCOUNT and stop; rollback rewrite success is not checked.",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 79,
+          "snippet": "if WS-JRN-STATUS not = \"00\""
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 163,
+          "snippet": "perform ROLLBACK-ACCOUNT"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 214,
+          "snippet": "ROLLBACK-ACCOUNT."
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "INT-TX01-002",
+      "category": "INTEGRITY",
+      "rule_description": "Search for unused journal stamp",
+      "condition": "Candidate stamp constructed from date, time, terminal and sequence",
+      "action": "If journal READ returns 23, accept stamp; if 00, increment sequence and retry",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 177,
+          "snippet": "FIND-UNIQUE-STAMP."
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 187,
+          "snippet": "RCV-TRAN-TELLER-TERMINAL"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 197,
+          "snippet": "move 1 to WS-STAMP-FOUND"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 205,
+          "snippet": "add 1 to WS-SEQUENCE"
+        }
+      ],
+      "dependencies": [
+        "COMMON-RECEIVE.cpy",
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "INT-TX01-003",
+      "category": "INTEGRITY",
+      "rule_description": "Reject exhausted journal sequence",
+      "condition": "Journal stamp duplicate and WS-SEQUENCE = 9999",
+      "action": "Set alert 1006, exit stamp search; MAIN checks alert and exits before account rewrite.",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 199,
+          "snippet": "if WS-SEQUENCE = 9999"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 200,
+          "snippet": "move 1006 to RSP-ALERT-CODE"
+        }
+      ],
+      "dependencies": [
+        "COMMON-RECEIVE.cpy",
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "TECH-TX01-001",
+      "category": "TECHNICAL",
+      "rule_description": "Handle account file open error",
+      "condition": "OPEN ACCOUNT-FILE status not 00",
+      "action": "Alert 9001; Account file error; GOBACK",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 70,
+          "snippet": "open i-o ACCOUNT-FILE"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 73,
+          "snippet": "move \"Account file error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "TECH-TX01-002",
+      "category": "TECHNICAL",
+      "rule_description": "Handle journal file open error",
+      "condition": "OPEN JOURNAL-FILE status not 00",
+      "action": "Alert 9002; Journal file error; close opened files; GOBACK",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 78,
+          "snippet": "open i-o JOURNAL-FILE"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 81,
+          "snippet": "move \"Journal file error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "TECH-TX01-003",
+      "category": "TECHNICAL",
+      "rule_description": "Handle unexpected account read error",
+      "condition": "READ ACCOUNT-FILE status neither 00 nor 23",
+      "action": "Alert 9001; Account file error; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 88,
+          "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 98,
+          "snippet": "when other"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "TECH-TX01-004",
+      "category": "TECHNICAL",
+      "rule_description": "Handle account rewrite error",
+      "condition": "REWRITE ACCOUNT-RECORD status not 00",
+      "action": "Alert 9001; Account update error; stop",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 141,
+          "snippet": "rewrite ACCOUNT-RECORD"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 145,
+          "snippet": "move \"Account update error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    },
+    {
+      "id": "TECH-TX01-005",
+      "category": "TECHNICAL",
+      "rule_description": "Handle journal stamp lookup error",
+      "condition": "Journal stamp READ status neither 00 nor 23",
+      "action": "Alert 9002; Journal file error; stop search and reject",
+      "evidence": [
+        {
+          "file": "TX01.cbl",
+          "line": 193,
+          "snippet": "read JOURNAL-FILE key is JRN-STAMP"
+        },
+        {
+          "file": "TX01.cbl",
+          "line": 203,
+          "snippet": "exit perform"
+        }
+      ],
+      "dependencies": [
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "previously_reviewed_source_consistent"
+    }
+  ],
+  "frozen_date": "2026-11-09",
+  "review_status": "previously_reviewed_with_project_owner; final source consistency checked; independent expert adjudication not claimed",
+  "source_files_sha256": {
+    "TX01.cbl": "661d2fb45093f9c02654b5c4a00ef7a70c7a4d1dc20ff53cee9247f0644c7f2c",
+    "ACCOUNT-RECORD.cpy": "8f3ab558dac3b6ff41d012b726ca38b51044088e82259195db4d7ad2f8c93fa5",
+    "JOURNAL-RECORD.cpy": "6c76faf89f608f4622e309b2ccaa42b44748ea6ee884f8e4b6671d623e027871",
+    "COMMON-RECEIVE.cpy": "9a1eff13e36460d4a9d5cdcaf21e0f9149936c7743a128b54b82c19919612bac",
+    "COMMON-RESPONSE.cpy": "1bba1549b8ff1cc4cad191626f240b25add25d5646b65b7f387a56d5c92a8c9e",
+    "TX01-RECEIVE.cpy": "c82281e51a970a3ecd98802ec3366a86a6345aa0548fc008bfa0b2a69dd8c17e",
+    "TX01-RESPONSE.cpy": "aea1fc0c61a1d60468b913c0d71ac2de83f668974414a3b2096e541d0bb401b5"
+  },
+  "source_validation": {
+    "source_evidence_snippets": "all line-numbered evidence snippets matched TX01.cbl",
+    "dependency_file_existence": "all referenced copybook filenames exist",
+    "behavioral_notes": [
+      "After FIND-UNIQUE-STAMP, MAIN checks RSP-ALERT-CODE and exits before rewriting account.",
+      "ROLLBACK-ACCOUNT does not verify rollback REWRITE success.",
+      "No transaction-wide atomicity guarantee is asserted."
+    ]
+  }
+}

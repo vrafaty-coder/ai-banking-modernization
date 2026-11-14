@@ -1,0 +1,9 @@
+[
+  {
+    "rule_description": "Rollback account balance to old balance if account was previously updated during a transaction failure",
+    "condition": "WS-ACCOUNT-UPDATED = 1 and ACCOUNT-FILE read status is successful (WS-ACC-STATUS = 00)",
+    "action": "Restore ACC-BALANCE to WS-OLD-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = 00 move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+    "category": "INTEGRITY"
+  }
+]

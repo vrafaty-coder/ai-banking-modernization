@@ -1,0 +1,2 @@
+       05 RSP-ACCOUNT-BALANCE       PIC 9(15).
+       05 RSP-JOURNAL-STAMP         PIC X(22).

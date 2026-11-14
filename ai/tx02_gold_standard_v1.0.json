@@ -1,0 +1,723 @@
+{
+  "title": "TX02 Withdrawal — Reference Rules (Frozen v1.0)",
+  "status": "frozen_v1.0",
+  "source_baseline": "TX02.cbl and six supplied copybooks",
+  "source_sha256": "15d3e89b60fb4e18b298be9796e75e298372f6448a5256b532b1cbfc072af322",
+  "provenance": "Assistant-authored source-grounded reference; user approved two explicit refinements (overflow reachability and split of journal lookup/write errors). Not independently blinded expert annotation.",
+  "evaluation_policy": "BUSINESS primary; INTEGRITY and TECHNICAL supplemental; maintain same matching policy as TX01.",
+  "rule_count": 17,
+  "rules": [
+    {
+      "id": "BR-TX02-001",
+      "category": "BUSINESS",
+      "rule_description": "Reject zero withdrawal amount",
+      "condition": "RCV-AMOUNT = 0",
+      "action": "1004 Invalid amount; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 64,
+          "snippet": "if RCV-AMOUNT = 0"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 65,
+          "snippet": "move 1004 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 66,
+          "snippet": "move \"Invalid amount\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "TX02-RECEIVE.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-002",
+      "category": "BUSINESS",
+      "rule_description": "Account must exist",
+      "condition": "Account READ file status 23",
+      "action": "1001 Account not found; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 87,
+          "snippet": "move RCV-ACCOUNT-NUMBER to ACC-NUMBER"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 88,
+          "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 93,
+          "snippet": "when \"23\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 94,
+          "snippet": "move 1001 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 95,
+          "snippet": "move \"Account not found\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-003",
+      "category": "BUSINESS",
+      "rule_description": "Reject blocked account",
+      "condition": "ACC-BLOCKED (status B)",
+      "action": "1002 Account blocked; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 105,
+          "snippet": "evaluate true"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 106,
+          "snippet": "when ACC-BLOCKED"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 107,
+          "snippet": "move 1002 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 108,
+          "snippet": "move \"Account blocked\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-004",
+      "category": "BUSINESS",
+      "rule_description": "Reject closed account",
+      "condition": "ACC-CLOSED (status C)",
+      "action": "1003 Account closed; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 109,
+          "snippet": "when ACC-CLOSED"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 110,
+          "snippet": "move 1003 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 111,
+          "snippet": "move \"Account closed\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-005",
+      "category": "BUSINESS",
+      "rule_description": "Reject other non-active account status",
+      "condition": "Not ACC-ACTIVE after blocked/closed checks",
+      "action": "9001 Invalid account status; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 112,
+          "snippet": "when not ACC-ACTIVE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 113,
+          "snippet": "move 9001 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 114,
+          "snippet": "move \"Invalid account status\" to RSP-ALERT-MESSAGE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 117,
+          "snippet": "if RSP-ALERT-CODE not = 0"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-006",
+      "category": "BUSINESS",
+      "rule_description": "Reject withdrawal exceeding available balance",
+      "condition": "ACC-BALANCE < RCV-AMOUNT",
+      "action": "1007 Insufficient funds; no balance update",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 122,
+          "snippet": "move ACC-BALANCE to WS-OLD-BALANCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 123,
+          "snippet": "if ACC-BALANCE < RCV-AMOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 124,
+          "snippet": "move 1007 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 125,
+          "snippet": "move \"Insufficient funds\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "TX02-RECEIVE.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "BR-TX02-007",
+      "category": "BUSINESS",
+      "rule_description": "Check computed balance against 15-digit maximum",
+      "condition": "WS-NEW-BALANCE > 999999999999999",
+      "action": "1005 Balance overflow; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 130,
+          "snippet": "compute WS-NEW-BALANCE ="
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 131,
+          "snippet": "ACC-BALANCE - RCV-AMOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 133,
+          "snippet": "if WS-NEW-BALANCE > 999999999999999"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 134,
+          "snippet": "move 1005 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 135,
+          "snippet": "move \"Balance overflow\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements",
+      "note": "Guard is present in source but appears unreachable for valid nonnegative PIC 9(15) amounts and balance after sufficient-funds check; do not claim positive test coverage without a reachable witness.",
+      "applicability": "Unreachable under valid inputs after sufficient-funds check; retain as source-code rule, exclude from normal feasible-path test denominator.",
+      "review_note": "Source contains this check; do not treat absence of reachable test as a pass."
+    },
+    {
+      "id": "BR-TX02-008",
+      "category": "BUSINESS",
+      "rule_description": "Successful withdrawal decreases account balance and returns success",
+      "condition": "Valid active account, amount positive, sufficient funds, successful file operations",
+      "action": "New balance = old balance - amount; response status 0, alert 0, balance and stamp",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 130,
+          "snippet": "compute WS-NEW-BALANCE ="
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 131,
+          "snippet": "ACC-BALANCE - RCV-AMOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 147,
+          "snippet": "move WS-NEW-BALANCE to ACC-BALANCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 148,
+          "snippet": "rewrite ACCOUNT-RECORD"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 175,
+          "snippet": "move 0 to RSP-STATUS-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 176,
+          "snippet": "RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 178,
+          "snippet": "move WS-NEW-BALANCE to RSP-ACCOUNT-BALANCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 179,
+          "snippet": "move WS-STAMP to RSP-JOURNAL-STAMP"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "TX02-RESPONSE.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "INT-TX02-001",
+      "category": "INTEGRITY",
+      "rule_description": "Journal debit entry on successful withdrawal",
+      "condition": "Account rewrite succeeded; journal write attempted",
+      "action": "Initialize journal; stamp and TX02 code; debit account=request account; amount=request amount; credit account remains initialized; write journal",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 159,
+          "snippet": "initialize JOURNAL-RECORD"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 160,
+          "snippet": "move WS-STAMP to JRN-STAMP"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 161,
+          "snippet": "move \"TX02\" to JRN-TRAN-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 162,
+          "snippet": "move RCV-ACCOUNT-NUMBER to JRN-DB-ACCOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 163,
+          "snippet": "move RCV-AMOUNT to JRN-AMOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 165,
+          "snippet": "write JOURNAL-RECORD"
+        }
+      ],
+      "dependencies": [
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "INT-TX02-002",
+      "category": "INTEGRITY",
+      "rule_description": "Choose unique journal stamp",
+      "condition": "Candidate stamp from date+time+terminal+4-digit sequence; journal READ collision",
+      "action": "Increment sequence until unused stamp; at 9999 collision raise 1006 Journal stamp exhausted",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 184,
+          "snippet": "FIND-UNIQUE-STAMP."
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 185,
+          "snippet": "move RCV-TRAN-SEQUENCE to WS-SEQUENCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 191,
+          "snippet": "string"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 192,
+          "snippet": "RCV-TRAN-DATE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 193,
+          "snippet": "RCV-TRAN-TIME"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 194,
+          "snippet": "RCV-TRAN-TELLER-TERMINAL"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 195,
+          "snippet": "WS-SEQUENCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 196,
+          "snippet": "into WS-STAMP"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 200,
+          "snippet": "read JOURNAL-FILE key is JRN-STAMP"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 203,
+          "snippet": "when \"23\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 205,
+          "snippet": "when \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 206,
+          "snippet": "if WS-SEQUENCE = 9999"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 207,
+          "snippet": "move 1006 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 212,
+          "snippet": "add 1 to WS-SEQUENCE"
+        }
+      ],
+      "dependencies": [
+        "COMMON-RECEIVE.cpy",
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "INT-TX02-003",
+      "category": "INTEGRITY",
+      "rule_description": "Attempt account rollback on journal write failure",
+      "condition": "Journal write fails after successful account rewrite",
+      "action": "9002 Journal write error; read account; if read succeeds, restore old balance and rewrite; rollback outcome is not separately reported",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 157,
+          "snippet": "move 1 to WS-ACCOUNT-UPDATED"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 165,
+          "snippet": "write JOURNAL-RECORD"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 167,
+          "snippet": "if WS-JRN-STATUS not = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 168,
+          "snippet": "move 9002 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 169,
+          "snippet": "move \"Journal write error\" to RSP-ALERT-MESSAGE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 170,
+          "snippet": "perform ROLLBACK-ACCOUNT"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 221,
+          "snippet": "ROLLBACK-ACCOUNT."
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 222,
+          "snippet": "if WS-ACCOUNT-UPDATED = 1"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 223,
+          "snippet": "move RCV-ACCOUNT-NUMBER to ACC-NUMBER"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 224,
+          "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 225,
+          "snippet": "if WS-ACC-STATUS = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 226,
+          "snippet": "move WS-OLD-BALANCE to ACC-BALANCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 227,
+          "snippet": "rewrite ACCOUNT-RECORD"
+        }
+      ],
+      "dependencies": [
+        "ACCOUNT-RECORD.cpy",
+        "JOURNAL-RECORD.cpy"
+      ],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-001",
+      "category": "TECHNICAL",
+      "rule_description": "Account open failure",
+      "condition": "ACCOUNT-FILE OPEN status not 00",
+      "action": "9001 Account file error; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 70,
+          "snippet": "open i-o ACCOUNT-FILE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 71,
+          "snippet": "if WS-ACC-STATUS not = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 72,
+          "snippet": "move 9001 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 73,
+          "snippet": "move \"Account file error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-002",
+      "category": "TECHNICAL",
+      "rule_description": "Journal open failure",
+      "condition": "JOURNAL-FILE OPEN status not 00",
+      "action": "9002 Journal file error; close open files; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 78,
+          "snippet": "open i-o JOURNAL-FILE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 79,
+          "snippet": "if WS-JRN-STATUS not = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 80,
+          "snippet": "move 9002 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 81,
+          "snippet": "move \"Journal file error\" to RSP-ALERT-MESSAGE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 82,
+          "snippet": "perform CLOSE-FILES"
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-003",
+      "category": "TECHNICAL",
+      "rule_description": "Unexpected account read failure",
+      "condition": "Account READ status other than 00 or 23",
+      "action": "9001 Account file error; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 88,
+          "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 90,
+          "snippet": "evaluate WS-ACC-STATUS"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 93,
+          "snippet": "when \"23\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 98,
+          "snippet": "when other"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 99,
+          "snippet": "move 9001 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 100,
+          "snippet": "move \"Account file error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-004",
+      "category": "TECHNICAL",
+      "rule_description": "Account rewrite failure",
+      "condition": "ACCOUNT-RECORD REWRITE status not 00",
+      "action": "9001 Account update error; return",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 147,
+          "snippet": "move WS-NEW-BALANCE to ACC-BALANCE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 148,
+          "snippet": "rewrite ACCOUNT-RECORD"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 150,
+          "snippet": "if WS-ACC-STATUS not = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 151,
+          "snippet": "move 9001 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 152,
+          "snippet": "move \"Account update error\" to RSP-ALERT-MESSAGE"
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-005",
+      "category": "TECHNICAL",
+      "rule_description": "Journal stamp lookup I/O failure",
+      "condition": "Journal lookup READ status other than 00 or 23",
+      "action": "9002 Journal file error; exit stamp search before account rewrite",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 200,
+          "snippet": "read JOURNAL-FILE key is JRN-STAMP"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 202,
+          "snippet": "evaluate WS-JRN-STATUS"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 213,
+          "snippet": "when other"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 214,
+          "snippet": "move 9002 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 215,
+          "snippet": "move \"Journal file error\""
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    },
+    {
+      "id": "TECH-TX02-006",
+      "category": "TECHNICAL",
+      "rule_description": "Journal write failure",
+      "condition": "JOURNAL-RECORD WRITE status not 00 after account rewrite",
+      "action": "9002 Journal write error; attempt account rollback",
+      "evidence": [
+        {
+          "file": "TX02.cbl",
+          "line": 165,
+          "snippet": "write JOURNAL-RECORD"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 167,
+          "snippet": "if WS-JRN-STATUS not = \"00\""
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 168,
+          "snippet": "move 9002 to RSP-ALERT-CODE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 169,
+          "snippet": "move \"Journal write error\" to RSP-ALERT-MESSAGE"
+        },
+        {
+          "file": "TX02.cbl",
+          "line": 170,
+          "snippet": "perform ROLLBACK-ACCOUNT"
+        }
+      ],
+      "dependencies": [],
+      "review_status": "source_reviewed_user_approved_refinements"
+    }
+  ],
+  "review_note": "Frozen after user approval of the two proposed corrections; retain original draft separately."
+}

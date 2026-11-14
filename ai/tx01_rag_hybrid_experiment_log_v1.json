@@ -1,0 +1,40 @@
+{
+  "experiment": "TX01 RAG hybrid review (exploratory, not a controlled single run)",
+  "reference": "Frozen Gold Standard v1.0, 15 rules",
+  "sources": {
+    "MAIN": "tx01_rag_main(1).json (newer run)",
+    "FIND-UNIQUE-STAMP": "tx01_rag_find_unique_stamp.json (earlier run)",
+    "ROLLBACK-ACCOUNT": "tx01_rag_rollback_account.json (earlier run)",
+    "CLOSE-FILES": "tx01_rag_close_files.json (earlier run)"
+  },
+  "policy": "Strict FULL-only TP; PARTIAL not TP; complementary rollback merged once; 2 CLOSE-FILES rules unmatched; no gold-standard text inserted into model output",
+  "counts": {
+    "raw_outputs": 17,
+    "independent_after_merge": 16,
+    "full": 7,
+    "partial_reference": 7,
+    "none_reference": 1,
+    "tp": 7,
+    "fp": 9,
+    "fn": 8,
+    "precision": 0.4375,
+    "recall": 0.4667,
+    "f1": 0.4516
+  },
+  "baseline_llm_only": {
+    "tp": 8,
+    "fp": 6,
+    "fn": 7,
+    "precision": 0.5714,
+    "recall": 0.5333,
+    "f1": 0.5517
+  },
+  "caveats": [
+    "Human review labels provisional; not independently adjudicated",
+    "MAIN from different run than other three paragraphs",
+    "RAG had six copybooks, LLM-only did not",
+    "RAG evidence uses paraphrased single quotes and should not be represented as verbatim COBOL",
+    "The prior malformed MAIN output and the newer intact output are distinct generations, not proof of network truncation",
+    "Merge policy was decided after inspecting gold-standard alignment; must not claim blinded evaluation"
+  ]
+}

@@ -1,0 +1,16 @@
+﻿gold_id,category,rag_sources,provisional_label,reason
+BR-TX01-001,BUSINESS,MAIN:1,FULL,"Zero amount, alert 1004 and GOBACK present"
+BR-TX01-002,BUSINESS,MAIN:4,FULL,"Read status 23, alert 1001 and GOBACK present"
+BR-TX01-003,BUSINESS,MAIN:6,PARTIAL,Blocked status and alert present; stop processing not explicit
+BR-TX01-004,BUSINESS,MAIN:7,PARTIAL,Closed status and alert present; stop processing not explicit
+BR-TX01-005,BUSINESS,MAIN:8,PARTIAL,Invalid status and alert present; priority and stop not explicit
+BR-TX01-006,BUSINESS,MAIN:9,FULL,"Overflow limit, alert 1005 and stop present"
+BR-TX01-007,BUSINESS,none,NONE,"Successful deposit path, balance/journal success response absent"
+INT-TX01-001,INTEGRITY,MAIN:11 + ROLLBACK-ACCOUNT:1,PARTIAL,Trigger and rollback action described; rollback rewrite-success limitation not explicit
+INT-TX01-002,INTEGRITY,FIND-UNIQUE-STAMP:1,PARTIAL,Lookup and statuses present; candidate composition not explicit
+INT-TX01-003,INTEGRITY,FIND-UNIQUE-STAMP:2,PARTIAL,Exhaustion alert present; MAIN rejection before account rewrite not explicit
+TECH-TX01-001,TECHNICAL,MAIN:2,FULL,"Open failure status, alert and stop present"
+TECH-TX01-002,TECHNICAL,MAIN:3,FULL,"Journal open failure, close and stop present"
+TECH-TX01-003,TECHNICAL,MAIN:5,FULL,"Unexpected account read status, alert and stop present"
+TECH-TX01-004,TECHNICAL,MAIN:10,FULL,"Rewrite failure, alert and stop present"
+TECH-TX01-005,TECHNICAL,FIND-UNIQUE-STAMP:3,PARTIAL,Unexpected stamp lookup error and exit loop present; MAIN rejection not explicit

@@ -1,0 +1,17 @@
+PASS successful deposit: response/account/journal
+PASS zero amount: 1004 and no side effects
+PASS missing account: 1001
+PASS account status B: 1002
+PASS account status C: 1003
+PASS account status X: 9001
+PASS 15-digit overflow: 1005
+PASS stamp collision increments sequence
+PASS stamp exhaustion: 1006
+PASS journal write failure: rollback
+FAIL injected rewrite error: should reach rewrite first ? rewrites=0 response=Tx01Response[transactionCode=TX01, statusCode=1, alertCode=9001, alertMessage=Account file error, accountBalance=0, journalStamp=]
+PASS injected rollback rewrite failure: state remains updated
+PASS account open failure: 9001 and no state change
+PASS journal open failure: 9002 and no state change
+PASS journal stamp lookup failure: 9002 before account rewrite
+FAIL account read I/O failure: expected 9001 (interface limitation) ? actual=1001 (null read conflates I/O error with missing account)
+RESULT passed=14 failed=2 total=16

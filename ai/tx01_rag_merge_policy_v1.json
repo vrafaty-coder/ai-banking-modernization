@@ -1,0 +1,43 @@
+{
+  "policy_version": "RAG merge policy v1.0",
+  "policy": [
+    "Merge only complementary extracted fragments of the same reference behavior.",
+    "Use only model-extracted text, never fill missing details from Gold Standard.",
+    "Preserve source IDs, paragraphs, and verbatim fields.",
+    "Merge does not imply FULL; label completeness independently."
+  ],
+  "merged_groups": [
+    {
+      "gold_id": "INT-TX01-001",
+      "source_ids": [
+        "RAG-11",
+        "RAG-15"
+      ],
+      "fragments": [
+        {
+          "rag_id": "RAG-11",
+          "source_paragraph": "MAIN",
+          "source_rule_index": 11,
+          "rule_description": "Handle journal write error and rollback account updates",
+          "condition": "WS-JRN-STATUS not = \\",
+          "action": "Set alert code 9002, message Journal write error, perform rollback account, close files, and go back",
+          "evidence": "write JOURNAL-RECORD if WS-JRN-STATUS not = \\",
+          "category": "INTEGRITY"
+        },
+        {
+          "rag_id": "RAG-15",
+          "source_paragraph": "ROLLBACK-ACCOUNT",
+          "source_rule_index": 1,
+          "rule_description": "Rollback account balance to old balance if account was updated and account read is successful during a rollback procedure",
+          "condition": "WS-ACCOUNT-UPDATED = 1 and WS-ACC-STATUS = \"00\"",
+          "action": "move WS-OLD-BALANCE to ACC-BALANCE and rewrite ACCOUNT-RECORD",
+          "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = \"00\" move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+          "category": "INTEGRITY"
+        }
+      ],
+      "provisional_label": "PARTIAL",
+      "note": "Journal write failure trigger and rollback implementation are complementary; lack of rollback rewrite-success check not explicitly noted."
+    }
+  ],
+  "other_rules_unmodified": true
+}

@@ -1,0 +1,443 @@
+You are implementing a Java 17 banking deposit service to reproduce the COBOL TX01 program's OBSERVABLE behavior.
+Use the supplied COBOL source and copybooks as the authority for actual behavior. The supplied LLM-only rules are an auxiliary extraction artifact; do not assume they are complete or correct.
+Use the four provided Java records exactly as defined; do not change them.
+Implement Tx01Service.java and any minimal repository interfaces needed for deterministic in-memory simulation. Output complete Java source files, not explanations.
+Preserve error codes/messages, status codes, balance limits, journal stamp construction and collision handling, operation order, early returns, and rollback behavior including its limitations. Do not add business validations absent from COBOL.
+Model file open/read/rewrite/write failures as injectable repository outcomes so tests can cover failure paths. Avoid using database or filesystem dependencies. Java long is sufficient for PIC 9(15), but enforce the COBOL 15-digit maximum. Preserve fixed-width numeric fields and leading zeros in the stamp.
+Return ONLY a JSON object with a `files` array of objects containing `name` (filename only) and `content` (complete Java source). No Markdown fences. Do not modify the supplied records.
+
+INPUT MATERIALS:
+===== TX01.cbl =====
+
+       >>SOURCE FORMAT FREE
+identification division.
+program-id. TX01.
+
+environment division.
+input-output section.
+file-control.
+    select ACCOUNT-FILE
+        assign to "../../data/accounts.dat"
+        organization is indexed
+        access mode is dynamic
+        record key is ACC-NUMBER
+        file status is WS-ACC-STATUS.
+
+    select JOURNAL-FILE
+        assign to "../../data/journal.dat"
+        organization is indexed
+        access mode is dynamic
+        record key is JRN-STAMP
+        file status is WS-JRN-STATUS.
+
+data division.
+file section.
+
+fd ACCOUNT-FILE.
+copy "ACCOUNT-RECORD.cpy".
+
+fd JOURNAL-FILE.
+copy "JOURNAL-RECORD.cpy".
+
+working-storage section.
+01 WS-ACC-STATUS       pic xx.
+01 WS-JRN-STATUS       pic xx.
+01 WS-OLD-BALANCE      pic 9(15).
+01 WS-NEW-BALANCE      pic 9(16).
+01 WS-SEQUENCE         pic 9(04).
+01 WS-STAMP            pic x(22).
+01 WS-STAMP-FOUND      pic 9.
+01 WS-ACCOUNT-UPDATED  pic 9.
+01 WS-ACCOUNT-OPEN     pic 9.
+01 WS-JOURNAL-OPEN     pic 9.
+
+linkage section.
+01 TX01-RECEIVE.
+   copy "COMMON-RECEIVE.cpy".
+   copy "TX01-RECEIVE.cpy".
+
+01 TX01-RESPONSE.
+   copy "COMMON-RESPONSE.cpy".
+   copy "TX01-RESPONSE.cpy".
+
+procedure division using TX01-RECEIVE TX01-RESPONSE.
+
+MAIN.
+    initialize TX01-RESPONSE
+    move "TX01" to RSP-TRAN-CODE
+    move 1 to RSP-STATUS-CODE
+
+    move 0 to WS-ACCOUNT-OPEN
+              WS-JOURNAL-OPEN
+              WS-ACCOUNT-UPDATED
+
+    if RCV-AMOUNT = 0
+        move 1004 to RSP-ALERT-CODE
+        move "Invalid amount" to RSP-ALERT-MESSAGE
+        goback
+    end-if
+
+    open i-o ACCOUNT-FILE
+    if WS-ACC-STATUS not = "00"
+        move 9001 to RSP-ALERT-CODE
+        move "Account file error" to RSP-ALERT-MESSAGE
+        goback
+    end-if
+    move 1 to WS-ACCOUNT-OPEN
+
+    open i-o JOURNAL-FILE
+    if WS-JRN-STATUS not = "00"
+        move 9002 to RSP-ALERT-CODE
+        move "Journal file error" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+    move 1 to WS-JOURNAL-OPEN
+
+    move RCV-ACCOUNT-NUMBER to ACC-NUMBER
+    read ACCOUNT-FILE key is ACC-NUMBER
+
+    evaluate WS-ACC-STATUS
+        when "00"
+            continue
+        when "23"
+            move 1001 to RSP-ALERT-CODE
+            move "Account not found" to RSP-ALERT-MESSAGE
+            perform CLOSE-FILES
+            goback
+        when other
+            move 9001 to RSP-ALERT-CODE
+            move "Account file error" to RSP-ALERT-MESSAGE
+            perform CLOSE-FILES
+            goback
+    end-evaluate
+
+    evaluate true
+        when ACC-BLOCKED
+            move 1002 to RSP-ALERT-CODE
+            move "Account blocked" to RSP-ALERT-MESSAGE
+        when ACC-CLOSED
+            move 1003 to RSP-ALERT-CODE
+            move "Account closed" to RSP-ALERT-MESSAGE
+        when not ACC-ACTIVE
+            move 9001 to RSP-ALERT-CODE
+            move "Invalid account status" to RSP-ALERT-MESSAGE
+    end-evaluate
+
+    if RSP-ALERT-CODE not = 0
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move ACC-BALANCE to WS-OLD-BALANCE
+    compute WS-NEW-BALANCE =
+        ACC-BALANCE + RCV-AMOUNT
+
+    if WS-NEW-BALANCE > 999999999999999
+        move 1005 to RSP-ALERT-CODE
+        move "Balance overflow" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    perform FIND-UNIQUE-STAMP
+
+    if RSP-ALERT-CODE not = 0
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move WS-NEW-BALANCE to ACC-BALANCE
+    rewrite ACCOUNT-RECORD
+
+    if WS-ACC-STATUS not = "00"
+        move 9001 to RSP-ALERT-CODE
+        move "Account update error" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move 1 to WS-ACCOUNT-UPDATED
+
+    initialize JOURNAL-RECORD
+    move WS-STAMP to JRN-STAMP
+    move "TX01" to JRN-TRAN-CODE
+    move RCV-ACCOUNT-NUMBER to JRN-CR-ACCOUNT
+    move RCV-AMOUNT to JRN-AMOUNT
+
+    write JOURNAL-RECORD
+
+    if WS-JRN-STATUS not = "00"
+        move 9002 to RSP-ALERT-CODE
+        move "Journal write error" to RSP-ALERT-MESSAGE
+        perform ROLLBACK-ACCOUNT
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move 0 to RSP-STATUS-CODE
+              RSP-ALERT-CODE
+    move spaces to RSP-ALERT-MESSAGE
+    move WS-NEW-BALANCE to RSP-ACCOUNT-BALANCE
+    move WS-STAMP to RSP-JOURNAL-STAMP
+
+    perform CLOSE-FILES
+    goback.
+
+FIND-UNIQUE-STAMP.
+    move RCV-TRAN-SEQUENCE to WS-SEQUENCE
+    move 0 to WS-STAMP-FOUND
+
+    perform until WS-STAMP-FOUND = 1
+        move spaces to WS-STAMP
+
+        string
+            RCV-TRAN-DATE
+            RCV-TRAN-TIME
+            RCV-TRAN-TELLER-TERMINAL
+            WS-SEQUENCE
+            into WS-STAMP
+        end-string
+
+        move WS-STAMP to JRN-STAMP
+        read JOURNAL-FILE key is JRN-STAMP
+
+        evaluate WS-JRN-STATUS
+            when "23"
+                move 1 to WS-STAMP-FOUND
+            when "00"
+                if WS-SEQUENCE = 9999
+                    move 1006 to RSP-ALERT-CODE
+                    move "Journal stamp exhausted"
+                        to RSP-ALERT-MESSAGE
+                    exit perform
+                end-if
+                add 1 to WS-SEQUENCE
+            when other
+                move 9002 to RSP-ALERT-CODE
+                move "Journal file error"
+                    to RSP-ALERT-MESSAGE
+                exit perform
+        end-evaluate
+    end-perform.
+
+ROLLBACK-ACCOUNT.
+    if WS-ACCOUNT-UPDATED = 1
+        move RCV-ACCOUNT-NUMBER to ACC-NUMBER
+        read ACCOUNT-FILE key is ACC-NUMBER
+        if WS-ACC-STATUS = "00"
+            move WS-OLD-BALANCE to ACC-BALANCE
+            rewrite ACCOUNT-RECORD
+        end-if
+    end-if.
+
+CLOSE-FILES.
+    if WS-JOURNAL-OPEN = 1
+        close JOURNAL-FILE
+        move 0 to WS-JOURNAL-OPEN
+    end-if
+    if WS-ACCOUNT-OPEN = 1
+        close ACCOUNT-FILE
+        move 0 to WS-ACCOUNT-OPEN
+    end-if.
+
+
+===== tx01_llm_rules.json =====
+[
+  {
+    "rule_description": "Transaction amount cannot be zero",
+    "condition": "RCV-AMOUNT = 0",
+    "action": "Move 1004 to RSP-ALERT-CODE, move Invalid amount to RSP-ALERT-MESSAGE, and goback",
+    "evidence": "if RCV-AMOUNT = 0\n        move 1004 to RSP-ALERT-CODE\n        move \"Invalid amount\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account file open error handling",
+    "condition": "WS-ACC-STATUS not = 00",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, and goback",
+    "evidence": "open i-o ACCOUNT-FILE\n    if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account file error\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal file open error handling",
+    "condition": "WS-JRN-STATUS not = 00",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "open i-o JOURNAL-FILE\n    if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal file error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Account not found check",
+    "condition": "WS-ACC-STATUS = 23",
+    "action": "Move 1001 to RSP-ALERT-CODE, move Account not found to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "when \"23\"\n            move 1001 to RSP-ALERT-CODE\n            move \"Account not found\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account file general error handling",
+    "condition": "WS-ACC-STATUS is other than 00 or 23",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "when other\n            move 9001 to RSP-ALERT-CODE\n            move \"Account file error\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Blocked account validation",
+    "condition": "ACC-BLOCKED is true",
+    "action": "Move 1002 to RSP-ALERT-CODE and move Account blocked to RSP-ALERT-MESSAGE",
+    "evidence": "when ACC-BLOCKED\n            move 1002 to RSP-ALERT-CODE\n            move \"Account blocked\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Closed account validation",
+    "condition": "ACC-CLOSED is true",
+    "action": "Move 1003 to RSP-ALERT-CODE and move Account closed to RSP-ALERT-MESSAGE",
+    "evidence": "when ACC-CLOSED\n            move 1003 to RSP-ALERT-CODE\n            move \"Account closed\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Inactive account validation",
+    "condition": "not ACC-ACTIVE is true",
+    "action": "Move 9001 to RSP-ALERT-CODE and move Invalid account status to RSP-ALERT-MESSAGE",
+    "evidence": "when not ACC-ACTIVE\n            move 9001 to RSP-ALERT-CODE\n            move \"Invalid account status\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Balance overflow limit check",
+    "condition": "WS-NEW-BALANCE > 999999999999999",
+    "action": "Move 1005 to RSP-ALERT-CODE, move Balance overflow to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-NEW-BALANCE > 999999999999999\n        move 1005 to RSP-ALERT-CODE\n        move \"Balance overflow\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account update error handling",
+    "condition": "WS-ACC-STATUS not = 00 after rewrite",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account update error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account update error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal write error rollback and handling",
+    "condition": "WS-JRN-STATUS not = 00 after writing journal record",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal write error to RSP-ALERT-MESSAGE, perform ROLLBACK-ACCOUNT, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal write error\" to RSP-ALERT-MESSAGE\n        perform ROLLBACK-ACCOUNT\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "rule_description": "Journal stamp exhausted limit",
+    "condition": "WS-SEQUENCE = 9999 when journal stamp already exists",
+    "action": "Move 1006 to RSP-ALERT-CODE, move Journal stamp exhausted to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "if WS-SEQUENCE = 9999\n                    move 1006 to RSP-ALERT-CODE\n                    move \"Journal stamp exhausted\"\n                        to RSP-ALERT-MESSAGE\n                    exit perform\n                end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal file error during stamp generation",
+    "condition": "WS-JRN-STATUS is other than 00 or 23 during stamp lookup",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "when other\n                move 9002 to RSP-ALERT-CODE\n                move \"Journal file error\"\n                    to RSP-ALERT-MESSAGE\n                exit perform",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Account balance rollback on failure",
+    "condition": "WS-ACCOUNT-UPDATED = 1 and account is successfully read during rollback",
+    "action": "Restore ACC-BALANCE to WS-OLD-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "ROLLBACK-ACCOUNT.\n    if WS-ACCOUNT-UPDATED = 1\n        move RCV-ACCOUNT-NUMBER to ACC-NUMBER\n        read ACCOUNT-FILE key is ACC-NUMBER\n        if WS-ACC-STATUS = \"00\"\n            move WS-OLD-BALANCE to ACC-BALANCE\n            rewrite ACCOUNT-RECORD\n        end-if\n    end-if.",
+    "category": "INTEGRITY"
+  }
+]
+
+===== ACCOUNT-RECORD.cpy =====
+01 ACCOUNT-RECORD.
+   05 ACC-NUMBER       PIC X(13).
+   05 ACC-STATUS       PIC X(01).
+      88 ACC-ACTIVE    VALUE 'A'.
+      88 ACC-BLOCKED   VALUE 'B'.
+      88 ACC-CLOSED    VALUE 'C'.
+   05 ACC-CURRENCY     PIC X(03).
+   05 ACC-BALANCE      PIC 9(15).
+
+
+===== JOURNAL-RECORD.cpy =====
+       01 JOURNAL-RECORD.
+          05 JRN-STAMP         PIC X(22).
+          05 JRN-TRAN-CODE     PIC X(04).
+          05 JRN-CR-ACCOUNT    PIC X(13).
+          05 JRN-DB-ACCOUNT    PIC X(13).
+          05 JRN-AMOUNT        PIC 9(15).
+
+
+===== COMMON-RECEIVE.cpy =====
+       05 RCV-TRAN-CODE             PIC X(04).
+       05 RCV-TRAN-DATE             PIC 9(08).
+       05 RCV-TRAN-TIME             PIC 9(06).
+       05 RCV-TRAN-TELLER-TERMINAL  PIC X(04).
+       05 RCV-TRAN-SEQUENCE         PIC 9(04).
+
+
+===== TX01-RECEIVE.cpy =====
+       05 RCV-ACCOUNT-NUMBER        PIC X(13).
+       05 RCV-AMOUNT                PIC 9(15).
+
+
+===== COMMON-RESPONSE.cpy =====
+       05 RSP-TRAN-CODE             PIC X(04).
+       05 RSP-STATUS-CODE           PIC 9(02).
+       05 RSP-ALERT-CODE            PIC 9(04).
+       05 RSP-ALERT-MESSAGE         PIC X(50).
+
+
+===== TX01-RESPONSE.cpy =====
+       05 RSP-ACCOUNT-BALANCE       PIC 9(15).
+       05 RSP-JOURNAL-STAMP         PIC X(22).
+
+
+===== Tx01Request.java =====
+package banking.tx01;
+
+// Fields correspond to COMMON-RECEIVE and TX01-RECEIVE.
+public record Tx01Request(
+        String transactionCode,       // X(04)
+        String transactionDate,       // 9(08), preserve leading zeros
+        String transactionTime,       // 9(06), preserve leading zeros
+        String tellerTerminal,        // X(04)
+        String transactionSequence,   // 9(04), preserve leading zeros
+        String accountNumber,         // X(13)
+        long amount                   // 9(15)
+) {}
+
+
+===== Tx01Response.java =====
+package banking.tx01;
+
+// Fields correspond to COMMON-RESPONSE and TX01-RESPONSE.
+public record Tx01Response(
+        String transactionCode,       // X(04)
+        int statusCode,               // 9(02)
+        int alertCode,                // 9(04)
+        String alertMessage,         // X(50)
+        long accountBalance,          // 9(15)
+        String journalStamp           // X(22)
+) {}
+
+
+===== AccountRecord.java =====
+package banking.tx01;
+
+// Fields correspond to ACCOUNT-RECORD.
+public record AccountRecord(
+        String accountNumber,         // X(13)
+        String status,                // X(01): A, B, C
+        String currency,              // X(03)
+        long balance                  // 9(15)
+) {}
+
+
+===== JournalRecord.java =====
+package banking.tx01;
+
+// Fields correspond to JOURNAL-RECORD.
+public record JournalRecord(
+        String stamp,                 // X(22)
+        String transactionCode,       // X(04)
+        String creditAccount,         // X(13)
+        String debitAccount,          // X(13)
+        long amount                   // 9(15)
+) {}

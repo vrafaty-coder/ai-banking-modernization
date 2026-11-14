@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, please cite the associated paper and the tagged repository release when available."
+authors:
+  - family-names: "Rafati Porshokooh"
+    given-names: "Vahideh"
+title: "AI-assisted incremental modernization of legacy core banking systems: research artifacts"
+type: software
+# Add version, release date, repository URL, and DOI only after verifying the published release.

@@ -1,0 +1,30 @@
+{
+  "experiment": "TX02 Java Generation",
+  "status": "PREPARED_NOT_EXECUTED",
+  "selection": "LLM+RAG",
+  "model_target": "gemini-3.5-flash-lite",
+  "temperature_target": 0,
+  "gold_in_prompt": false,
+  "human_validation_in_prompt": false,
+  "input_sha256": {
+    "TX02.cbl": "15d3e89b60fb4e18b298be9796e75e298372f6448a5256b532b1cbfc072af322",
+    "ACCOUNT-RECORD.cpy": "8f3ab558dac3b6ff41d012b726ca38b51044088e82259195db4d7ad2f8c93fa5",
+    "JOURNAL-RECORD.cpy": "6c76faf89f608f4622e309b2ccaa42b44748ea6ee884f8e4b6671d623e027871",
+    "COMMON-RECEIVE.cpy": "9a1eff13e36460d4a9d5cdcaf21e0f9149936c7743a128b54b82c19919612bac",
+    "TX02-RECEIVE.cpy": "ced89641b95da041f918ad6ab385bc0d7bdadd2198170195a753db6f86bbcdb3",
+    "COMMON-RESPONSE.cpy": "1bba1549b8ff1cc4cad191626f240b25add25d5646b65b7f387a56d5c92a8c9e",
+    "TX02-RESPONSE.cpy": "0e36e845d2a6b6084fda69988360a961e83603e6590cf8a92e74476476161eb9",
+    "main_rules.json": "098b56361ec3ca663d0667c53254909475bd7ab20f45ca7171de0946071ff326",
+    "find_unique_stamp_rules.json": "3b2ad8d2531f074a1d31475e3884d0c110957b2e7ec8bf91bb4b98592da8571d",
+    "rollback_account_rules.json": "84d1c5ad34fb5b301640bcfcaf5e928494f01c4059a18ac798bcf25510c56083",
+    "close_files_rules.json": "40707638dee3464368c71333520da4720d69e07a85995c47bd87f970b00171a9",
+    "tx02_rag_rules_combined.json": "0aba3677afab5d5ff1fa858b7f6a958ba474dc159a01bc4f8111de607419c438",
+    "REFERENCE_TX01_AccountRecord.java": "6c91d87388bccad92f86b5e4923e2c961d6e8c2041c1f0eebe48fb5de5555751",
+    "REFERENCE_TX01_JournalRecord.java": "b82e2db64522a824ea3e6a9c8e287762f34447f25014bdb351142b5699b0006b",
+    "REFERENCE_TX01_Tx01Request.java": "7e8fc093fdd1aa6014092b2ecfad1dbd1fc00922c0256790d709922ed3631109",
+    "REFERENCE_TX01_Tx01Response.java": "f17666bf25277d67c6958eb3a5920d4559371dfa3cefb6e7c2e9aca4a80d3720"
+  },
+  "prompt_sha256": "e9be84e62845d156a0cd60a68c3f26501e2bfcd23247b7d87ce0c19386a68a3b",
+  "rag_rule_count": 19,
+  "notes": "Prepared from frozen original RAG extraction, not Gold or review. No model generation or validation gate execution yet."
+}

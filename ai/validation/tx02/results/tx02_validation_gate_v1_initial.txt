@@ -1,0 +1,64 @@
+﻿S01 | RESPONSE      | PASS | alert=0 balance=750 stamp=[20261111091530TERM0001] message=[                                                  ]
+S01 | ACCOUNT       | PASS | balance=750 rewrites=1
+S01 | JOURNAL       | PASS | count=1
+S01 | BUSINESS_RULE | PASS | Successful withdrawal
+S02 | RESPONSE      | PASS | alert=1004 balance=0 stamp=[] message=[Invalid amount                                    ]
+S02 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S02 | JOURNAL       | PASS | count=0
+S02 | BUSINESS_RULE | PASS | Zero amount
+S03 | RESPONSE      | PASS | alert=1001 balance=0 stamp=[] message=[Account not found                                 ]
+S03 | ACCOUNT       | PASS | balance=null rewrites=0
+S03 | JOURNAL       | PASS | count=0
+S03 | BUSINESS_RULE | PASS | Missing account
+S04 | RESPONSE      | PASS | alert=1002 balance=0 stamp=[] message=[Account blocked                                   ]
+S04 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S04 | JOURNAL       | PASS | count=0
+S04 | BUSINESS_RULE | PASS | Blocked account
+S05 | RESPONSE      | PASS | alert=1003 balance=0 stamp=[] message=[Account closed                                    ]
+S05 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S05 | JOURNAL       | PASS | count=0
+S05 | BUSINESS_RULE | PASS | Closed account
+S06 | RESPONSE      | PASS | alert=9001 balance=0 stamp=[] message=[Invalid account status                            ]
+S06 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S06 | JOURNAL       | PASS | count=0
+S06 | BUSINESS_RULE | PASS | Invalid account status
+S07 | RESPONSE      | PASS | alert=1007 balance=0 stamp=[] message=[Insufficient funds                                ]
+S07 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S07 | JOURNAL       | PASS | count=0
+S07 | BUSINESS_RULE | PASS | Insufficient funds
+S08 | RESPONSE      | PASS | alert=0 balance=750 stamp=[20261111091530TERM0002] message=[                                                  ]
+S08 | ACCOUNT       | PASS | balance=750 rewrites=1
+S08 | JOURNAL       | PASS | count=2
+S08 | BUSINESS_RULE | PASS | Journal stamp collision
+S09 | RESPONSE      | FAIL | alert=1006 balance=0 stamp=[20261111091530TERM9999] message=[Journal stamp exhausted                           ]
+S09 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S09 | JOURNAL       | PASS | count=1
+S09 | BUSINESS_RULE | FAIL | Journal stamp exhaustion
+S10 | RESPONSE      | FAIL | alert=9002 balance=0 stamp=[20261111091530TERM0001] message=[Journal write error                               ]
+S10 | ACCOUNT       | PASS | balance=1000 rewrites=2
+S10 | JOURNAL       | PASS | count=0
+S10 | BUSINESS_RULE | FAIL | Journal write failure and rollback
+S11 | RESPONSE      | FAIL | alert=9001 balance=0 stamp=[20261111091530TERM0001] message=[Account update error                              ]
+S11 | ACCOUNT       | PASS | balance=1000 rewrites=1
+S11 | JOURNAL       | PASS | count=0
+S11 | BUSINESS_RULE | FAIL | Account rewrite failure
+S12 | RESPONSE      | FAIL | alert=9002 balance=0 stamp=[20261111091530TERM0001] message=[Journal write error                               ]
+S12 | ACCOUNT       | PASS | balance=750 rewrites=2
+S12 | JOURNAL       | PASS | count=0
+S12 | BUSINESS_RULE | FAIL | Rollback rewrite failure
+S13 | RESPONSE      | PASS | alert=9001 balance=0 stamp=[] message=[Account file error                                ]
+S13 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S13 | JOURNAL       | PASS | count=0
+S13 | BUSINESS_RULE | PASS | Account open failure
+S14 | RESPONSE      | PASS | alert=9002 balance=0 stamp=[] message=[Journal file error                                ]
+S14 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S14 | JOURNAL       | PASS | count=0
+S14 | BUSINESS_RULE | PASS | Journal open failure
+S15 | RESPONSE      | FAIL | alert=9002 balance=0 stamp=[20261111091530TERM0001] message=[Journal file error                                ]
+S15 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S15 | JOURNAL       | PASS | count=0
+S15 | BUSINESS_RULE | FAIL | Journal lookup failure
+S16 | RESPONSE      | PASS | alert=9001 balance=0 stamp=[] message=[Account file error                                ]
+S16 | ACCOUNT       | PASS | balance=1000 rewrites=0
+S16 | JOURNAL       | PASS | count=0
+S16 | BUSINESS_RULE | PASS | Account read failure

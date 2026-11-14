@@ -1,0 +1,51 @@
+[
+  {
+    "rule_description": "Reject transaction if amount is zero",
+    "condition": "RCV-AMOUNT = 0",
+    "action": "Set alert code 1004 and message Invalid amount, then return",
+    "evidence": "if RCV-AMOUNT = 0 move 1004 to RSP-ALERT-CODE move Invalid amount to RSP-ALERT-MESSAGE goback end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Handle account file open failure",
+    "condition": "WS-ACC-STATUS not = 00 after opening ACCOUNT-FILE",
+    "action": "Set alert code 9001 and message Account file error, then return",
+    "evidence": "open i-o ACCOUNT-FILE if WS-ACC-STATUS not = 00 move 9001 to RSP-ALERT-CODE move Account file error to RSP-ALERT-MESSAGE goback end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Handle journal file open failure",
+    "condition": "WS-JRN-STATUS not = 00 after opening JOURNAL-FILE",
+    "action": "Set alert code 9002, message Journal file error, close files, and return",
+    "evidence": "open i-o JOURNAL-FILE if WS-JRN-STATUS not = 00 move 9002 to RSP-ALERT-CODE move Journal file error to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Handle account not found error",
+    "condition": "WS-ACC-STATUS = 23 after reading ACCOUNT-FILE",
+    "action": "Set alert code 1001, message Account not found, close files, and return",
+    "evidence": "when 23 move 1001 to RSP-ALERT-CODE move Account not found to RSP-ALERT-MESSAGE perform CLOSE-FILES goback",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Reject blocked, closed, or invalid status accounts",
+    "condition": "ACC-BLOCKED is true, ACC-CLOSED is true, or not ACC-ACTIVE",
+    "action": "Set corresponding alert codes (1002, 1003, or 9001) and messages",
+    "evidence": "evaluate true when ACC-BLOCKED move 1002 to RSP-ALERT-CODE move Account blocked to RSP-ALERT-MESSAGE when ACC-CLOSED move 1003 to RSP-ALERT-CODE move Account closed to RSP-ALERT-MESSAGE when not ACC-ACTIVE move 9001 to RSP-ALERT-CODE move Invalid account status to RSP-ALERT-MESSAGE end-evaluate",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Detect balance overflow",
+    "condition": "WS-NEW-BALANCE > 999999999999999",
+    "action": "Set alert code 1005, message Balance overflow, close files, and return",
+    "evidence": "if WS-NEW-BALANCE > 999999999999999 move 1005 to RSP-ALERT-CODE move Balance overflow to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Rollback account balance on journal write failure",
+    "condition": "WS-JRN-STATUS not = 00 after writing JOURNAL-RECORD and WS-ACCOUNT-UPDATED = 1",
+    "action": "Restore ACC-BALANCE to WS-OLD-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = 00 move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+    "category": "INTEGRITY"
+  }
+]

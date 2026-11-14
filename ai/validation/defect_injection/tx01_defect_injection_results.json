@@ -1,0 +1,348 @@
+{
+  "method": "Each mutant is compiled and tested separately; original Gemini Tx01Service.java is never modified. V3 source-derived oracle, not live COBOL execution.",
+  "mutants": [
+    {
+      "variant": "BASELINE",
+      "description": "Original unmodified Gemini Java",
+      "target_scenario": "",
+      "failed_scenarios": "",
+      "not_evaluable_scenarios": "S16",
+      "detected": "BASELINE",
+      "total_failed_scenarios": 0
+    },
+    {
+      "variant": "M01_zero_amount_accepted",
+      "description": "Zero amount validation disabled",
+      "target_scenario": "S02",
+      "failed_scenarios": "S02",
+      "not_evaluable_scenarios": "S16",
+      "detected": "YES",
+      "total_failed_scenarios": 1
+    },
+    {
+      "variant": "M02_blocked_account_accepted",
+      "description": "Blocked account check disabled",
+      "target_scenario": "S04",
+      "failed_scenarios": "S04",
+      "not_evaluable_scenarios": "S16",
+      "detected": "YES",
+      "total_failed_scenarios": 1
+    },
+    {
+      "variant": "M03_overflow_accepted",
+      "description": "Balance overflow check disabled",
+      "target_scenario": "S07",
+      "failed_scenarios": "S07",
+      "not_evaluable_scenarios": "S16",
+      "detected": "YES",
+      "total_failed_scenarios": 1
+    },
+    {
+      "variant": "M04_wrong_journal_credit_account",
+      "description": "Journal credited to wrong account",
+      "target_scenario": "S01",
+      "failed_scenarios": "S01;S08",
+      "not_evaluable_scenarios": "S16",
+      "detected": "YES",
+      "total_failed_scenarios": 2
+    },
+    {
+      "variant": "M05_no_rollback",
+      "description": "Rollback disabled",
+      "target_scenario": "S10",
+      "failed_scenarios": "S10;S12",
+      "not_evaluable_scenarios": "S16",
+      "detected": "YES",
+      "total_failed_scenarios": 2
+    }
+  ],
+  "details": {
+    "BASELINE": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [],
+      "stdout": "RESPONSE: PASS=15 FAIL=0 NOT_EVALUABLE=1\nACCOUNT: PASS=15 FAIL=0 NOT_EVALUABLE=1\nJOURNAL: PASS=15 FAIL=0 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=15 FAIL=0 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    },
+    "M01_zero_amount_accepted": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [
+        {
+          "scenario_id": "S02",
+          "scenario": "Zero amount",
+          "dimension": "RESPONSE",
+          "result": "FAIL",
+          "details": "actual=Tx01Response[transactionCode=TX01, statusCode=0, alertCode=0, alertMessage=, accountBalance=1000, journalStamp=20261111091530TERM0001] expected alert=1004 message=Invalid amount"
+        },
+        {
+          "scenario_id": "S02",
+          "scenario": "Zero amount",
+          "dimension": "ACCOUNT",
+          "result": "FAIL",
+          "details": "balance=1000 rewrites=1"
+        },
+        {
+          "scenario_id": "S02",
+          "scenario": "Zero amount",
+          "dimension": "JOURNAL",
+          "result": "FAIL",
+          "details": "count=1 contentChecked=false"
+        },
+        {
+          "scenario_id": "S02",
+          "scenario": "Zero amount",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        }
+      ],
+      "stdout": "RESPONSE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nACCOUNT: PASS=14 FAIL=1 NOT_EVALUABLE=1\nJOURNAL: PASS=14 FAIL=1 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    },
+    "M02_blocked_account_accepted": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [
+        {
+          "scenario_id": "S04",
+          "scenario": "Blocked account",
+          "dimension": "RESPONSE",
+          "result": "FAIL",
+          "details": "actual=Tx01Response[transactionCode=TX01, statusCode=1, alertCode=9001, alertMessage=Invalid account status, accountBalance=0, journalStamp=] expected alert=1002 message=Account blocked"
+        },
+        {
+          "scenario_id": "S04",
+          "scenario": "Blocked account",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        }
+      ],
+      "stdout": "RESPONSE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nACCOUNT: PASS=15 FAIL=0 NOT_EVALUABLE=1\nJOURNAL: PASS=15 FAIL=0 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    },
+    "M03_overflow_accepted": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 14,
+          "FAIL": 1,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [
+        {
+          "scenario_id": "S07",
+          "scenario": "Balance overflow",
+          "dimension": "RESPONSE",
+          "result": "FAIL",
+          "details": "actual=Tx01Response[transactionCode=TX01, statusCode=0, alertCode=0, alertMessage=, accountBalance=1000000000000000, journalStamp=20261111091530TERM0001] expected alert=1005 message=Balance overflow"
+        },
+        {
+          "scenario_id": "S07",
+          "scenario": "Balance overflow",
+          "dimension": "ACCOUNT",
+          "result": "FAIL",
+          "details": "balance=1000000000000000 rewrites=1"
+        },
+        {
+          "scenario_id": "S07",
+          "scenario": "Balance overflow",
+          "dimension": "JOURNAL",
+          "result": "FAIL",
+          "details": "count=1 contentChecked=false"
+        },
+        {
+          "scenario_id": "S07",
+          "scenario": "Balance overflow",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        }
+      ],
+      "stdout": "RESPONSE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nACCOUNT: PASS=14 FAIL=1 NOT_EVALUABLE=1\nJOURNAL: PASS=14 FAIL=1 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=14 FAIL=1 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    },
+    "M04_wrong_journal_credit_account": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 13,
+          "FAIL": 2,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 13,
+          "FAIL": 2,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [
+        {
+          "scenario_id": "S01",
+          "scenario": "Successful deposit",
+          "dimension": "JOURNAL",
+          "result": "FAIL",
+          "details": "count=1 contentChecked=true"
+        },
+        {
+          "scenario_id": "S01",
+          "scenario": "Successful deposit",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        },
+        {
+          "scenario_id": "S08",
+          "scenario": "Stamp collision",
+          "dimension": "JOURNAL",
+          "result": "FAIL",
+          "details": "count=2 contentChecked=true"
+        },
+        {
+          "scenario_id": "S08",
+          "scenario": "Stamp collision",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        }
+      ],
+      "stdout": "RESPONSE: PASS=15 FAIL=0 NOT_EVALUABLE=1\nACCOUNT: PASS=15 FAIL=0 NOT_EVALUABLE=1\nJOURNAL: PASS=13 FAIL=2 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=13 FAIL=2 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    },
+    "M05_no_rollback": {
+      "summary": {
+        "RESPONSE": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "ACCOUNT": {
+          "PASS": 13,
+          "FAIL": 2,
+          "NOT_EVALUABLE": 1
+        },
+        "JOURNAL": {
+          "PASS": 15,
+          "FAIL": 0,
+          "NOT_EVALUABLE": 1
+        },
+        "BUSINESS_RULE": {
+          "PASS": 13,
+          "FAIL": 2,
+          "NOT_EVALUABLE": 1
+        }
+      },
+      "failed_rows": [
+        {
+          "scenario_id": "S10",
+          "scenario": "Journal write error rollback",
+          "dimension": "ACCOUNT",
+          "result": "FAIL",
+          "details": "balance=1250 rewrites=1"
+        },
+        {
+          "scenario_id": "S10",
+          "scenario": "Journal write error rollback",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        },
+        {
+          "scenario_id": "S12",
+          "scenario": "Rollback rewrite failure",
+          "dimension": "ACCOUNT",
+          "result": "FAIL",
+          "details": "balance=1250 rewrites=1"
+        },
+        {
+          "scenario_id": "S12",
+          "scenario": "Rollback rewrite failure",
+          "dimension": "BUSINESS_RULE",
+          "result": "FAIL",
+          "details": "composite of response, account and journal checks for this rule"
+        }
+      ],
+      "stdout": "RESPONSE: PASS=15 FAIL=0 NOT_EVALUABLE=1\nACCOUNT: PASS=13 FAIL=2 NOT_EVALUABLE=1\nJOURNAL: PASS=15 FAIL=0 NOT_EVALUABLE=1\nBUSINESS_RULE: PASS=13 FAIL=2 NOT_EVALUABLE=1\nScenarios=16; generated CSV and JSON. NOT_EVALUABLE is excluded from equivalence claims.\n"
+    }
+  }
+}

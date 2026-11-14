@@ -1,0 +1,21 @@
+{
+  "experiment": "TX02 Withdrawal LLM+RAG Java generation",
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "prompt_sha256": "e9be84e62845d156a0cd60a68c3f26501e2bfcd23247b7d87ce0c19386a68a3b",
+  "prepared_manifest_sha256": "437bfa57e8b58a7ab1db815a55cb9d7c30674a6cdce2f36a8665beacac990874",
+  "utc_started": "2026-11-13T11:40:29.779056+00:00",
+  "status": "SOURCES_SAVED",
+  "gold_in_prompt": false,
+  "human_validation_in_prompt": false,
+  "response_sha256": "721a18cc17f293d0f41ad32eccee876a8998a521e6f04f57e11a0e08d5629a9f",
+  "finish_reason": "FinishReason.STOP",
+  "utc_finished": "2026-11-13T11:40:43.463658+00:00",
+  "generated_files_sha256": {
+    "Tx02Request.java": "0a1a91cd9e8aad51afcf232fa181283b269ed214a50a438640eee93faba93dbf",
+    "Tx02Response.java": "77069588f67480b0d403f77ac16310ed4dc671fbbc83a6a4f9ecdd8c8ee263c2",
+    "AccountRepository.java": "6906d5b4a5cc04b759e0c0942247e7c93e5ffe62be4c1189ac76af3aebe371e7",
+    "JournalRepository.java": "140f028a13b2bcc58ee6b9217981ae6e3f496c5c5d0fc17ae22b8c0553511bf3",
+    "Tx02Service.java": "5a1a05c44fd3e90bbcecea32b74ddbc7f3c689b339b80bfa1a1762dde229d0c1"
+  }
+}

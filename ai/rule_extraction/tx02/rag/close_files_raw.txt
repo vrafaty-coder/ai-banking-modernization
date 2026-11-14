@@ -1,0 +1,16 @@
+[
+  {
+    "rule_description": "Close JOURNAL-FILE if it is currently open",
+    "condition": "WS-JOURNAL-OPEN = 1",
+    "action": "Close JOURNAL-FILE and set WS-JOURNAL-OPEN to 0",
+    "evidence": "if WS-JOURNAL-OPEN = 1 close JOURNAL-FILE move 0 to WS-JOURNAL-OPEN end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Close ACCOUNT-FILE if it is currently open",
+    "condition": "WS-ACCOUNT-OPEN = 1",
+    "action": "Close ACCOUNT-FILE and set WS-ACCOUNT-OPEN to 0",
+    "evidence": "if WS-ACCOUNT-OPEN = 1 close ACCOUNT-FILE move 0 to WS-ACCOUNT-OPEN end-if",
+    "category": "TECHNICAL"
+  }
+]

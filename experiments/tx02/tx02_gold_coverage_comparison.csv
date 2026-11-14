@@ -1,0 +1,18 @@
+﻿gold_id,category,description,llm_only,rag
+BR-TX02-001,BUSINESS,Reject zero withdrawal amount,FULL,FULL
+BR-TX02-002,BUSINESS,Account must exist,FULL,FULL
+BR-TX02-003,BUSINESS,Reject blocked account,FULL,FULL
+BR-TX02-004,BUSINESS,Reject closed account,FULL,FULL
+BR-TX02-005,BUSINESS,Reject other non-active account status,FULL,FULL
+BR-TX02-006,BUSINESS,Reject withdrawal exceeding available balance,FULL,FULL
+BR-TX02-007,BUSINESS,Check computed balance against 15-digit maximum,FULL,FULL
+BR-TX02-008,BUSINESS,Successful withdrawal decreases account balance and returns success,MISS,MISS
+INT-TX02-001,INTEGRITY,Journal debit entry on successful withdrawal,MISS,MISS
+INT-TX02-002,INTEGRITY,Choose unique journal stamp,PARTIAL,FULL
+INT-TX02-003,INTEGRITY,Attempt account rollback on journal write failure,FULL,FULL
+TECH-TX02-001,TECHNICAL,Account open failure,FULL,FULL
+TECH-TX02-002,TECHNICAL,Journal open failure,FULL,FULL
+TECH-TX02-003,TECHNICAL,Unexpected account read failure,MISS,FULL
+TECH-TX02-004,TECHNICAL,Account rewrite failure,FULL,FULL
+TECH-TX02-005,TECHNICAL,Journal stamp lookup I/O failure,MISS,FULL
+TECH-TX02-006,TECHNICAL,Journal write failure,FULL,FULL

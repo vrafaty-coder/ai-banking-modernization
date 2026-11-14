@@ -1,0 +1,23 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "utc_started": "2026-11-11T06:20:27.693839+00:00",
+  "inputs_sha256": {
+    "TX01.cbl": "177bf76bec9911dce9317a259baf8cd49693440f0bd105b7917a3232f826ee9b",
+    "tx01_llm_rules.json": "cfab0d7c01f1b649c0b80852a27d0978a2f1fe773e0ad7590c43b28d940afe75",
+    "ACCOUNT-RECORD.cpy": "59853eea9d83730bb51665dce508e7f72523e8bbfaf59188d61d75338d35576a",
+    "JOURNAL-RECORD.cpy": "0b5abbca9c227c93cfaa8435c7f3e3d5f24fa5887b217c554a733c5f12540ff6",
+    "COMMON-RECEIVE.cpy": "30b24b8a5877954761bc47a5981e16e0cbd4c0ef039e9964de758a0e0d0cde06",
+    "TX01-RECEIVE.cpy": "95ab327db2cbf8dd36775b42353eeca3fbc034f7023c92d9c740d85775af8468",
+    "COMMON-RESPONSE.cpy": "29f3b1f32d3c9f01420763dcc197ed836e08761fad7531c67c310eb2400b9c0c",
+    "TX01-RESPONSE.cpy": "1341216ceab5fdd0594f3a7dc31ad024bdd889fb134a3a46769b2ece727b8e5e",
+    "Tx01Request.java": "7e8fc093fdd1aa6014092b2ecfad1dbd1fc00922c0256790d709922ed3631109",
+    "Tx01Response.java": "f17666bf25277d67c6958eb3a5920d4559371dfa3cefb6e7c2e9aca4a80d3720",
+    "AccountRecord.java": "6c91d87388bccad92f86b5e4923e2c961d6e8c2041c1f0eebe48fb5de5555751",
+    "JournalRecord.java": "b82e2db64522a824ea3e6a9c8e287762f34447f25014bdb351142b5699b0006b"
+  },
+  "prompt_sha256": "5b262de1194090b4c69ac9dc10cbf223b390696bb629dc61cd43900a26c5e034",
+  "note": "LLM-only rule-assisted generation; COBOL and copybooks also supplied. Gold Standard excluded.",
+  "finish_reason": "FinishReason.STOP",
+  "utc_finished": "2026-11-11T06:20:38.845981+00:00"
+}

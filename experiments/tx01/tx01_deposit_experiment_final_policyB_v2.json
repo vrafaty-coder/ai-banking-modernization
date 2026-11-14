@@ -1,0 +1,1303 @@
+{
+  "experiment_id": "TX01_DEPOSIT_RULE_EXTRACTION_HUMAN_VALIDATION_POLICY_B_V2",
+  "record_version": "final_human_review_v1.0",
+  "record_date": "2026-11-11",
+  "status": "human_review_completed; exploratory comparison; not independently blinded",
+  "transaction": {
+    "id": "TX01",
+    "name": "Deposit",
+    "source_language": "COBOL",
+    "next_transaction": "TX02 Withdrawal"
+  },
+  "reference": {
+    "frozen_gold_standard": {
+      "title": "TX01 Deposit — Reference Rules (Frozen v1.0)",
+      "status": "frozen_v1.0",
+      "source_baseline": "TX01.cbl and six copybooks (uploaded versions)",
+      "source_sha256": "661d2fb45093f9c02654b5c4a00ef7a70c7a4d1dc20ff53cee9247f0644c7f2c",
+      "provenance": "15 previously discussed and user-reviewed rules; assistant-assisted reference construction; not independently blinded expert annotation.",
+      "evaluation_policy": "BUSINESS primary; INTEGRITY and TECHNICAL supplemental. Freeze before calculating model metrics.",
+      "rule_count": 15,
+      "rules": [
+        {
+          "id": "BR-TX01-001",
+          "category": "BUSINESS",
+          "rule_description": "Reject zero deposit amount",
+          "condition": "RCV-AMOUNT = 0",
+          "action": "Alert 1004; Invalid amount; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 64,
+              "snippet": "if RCV-AMOUNT = 0"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 65,
+              "snippet": "move 1004 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-002",
+          "category": "BUSINESS",
+          "rule_description": "Account must exist",
+          "condition": "ACCOUNT-FILE READ returns status 23",
+          "action": "Alert 1001; Account not found; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 93,
+              "snippet": "when \"23\""
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 94,
+              "snippet": "move 1001 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-003",
+          "category": "BUSINESS",
+          "rule_description": "Reject blocked account",
+          "condition": "ACC-BLOCKED",
+          "action": "Alert 1002; Account blocked; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 106,
+              "snippet": "when ACC-BLOCKED"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 107,
+              "snippet": "move 1002 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-004",
+          "category": "BUSINESS",
+          "rule_description": "Reject closed account",
+          "condition": "ACC-CLOSED",
+          "action": "Alert 1003; Account closed; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 109,
+              "snippet": "when ACC-CLOSED"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 110,
+              "snippet": "move 1003 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-005",
+          "category": "BUSINESS",
+          "rule_description": "Reject non-active account status",
+          "condition": "NOT ACC-ACTIVE, after blocked and closed checks",
+          "action": "Alert 9001; Invalid account status; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 112,
+              "snippet": "when not ACC-ACTIVE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 114,
+              "snippet": "move \"Invalid account status\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-006",
+          "category": "BUSINESS",
+          "rule_description": "Prevent 15-digit account balance overflow",
+          "condition": "WS-NEW-BALANCE > 999999999999999",
+          "action": "Alert 1005; Balance overflow; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 123,
+              "snippet": "compute WS-NEW-BALANCE ="
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 126,
+              "snippet": "if WS-NEW-BALANCE > 999999999999999"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "BR-TX01-007",
+          "category": "BUSINESS",
+          "rule_description": "Complete successful deposit",
+          "condition": "Valid request and account, available journal stamp, successful account REWRITE and journal WRITE",
+          "action": "Increase account balance; write one TX01 journal record; return status 00, alert 0000, resulting balance and stamp only if both writes succeed.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 140,
+              "snippet": "move WS-NEW-BALANCE to ACC-BALANCE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 158,
+              "snippet": "write JOURNAL-RECORD"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 171,
+              "snippet": "move WS-NEW-BALANCE to RSP-ACCOUNT-BALANCE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "JOURNAL-RECORD.cpy",
+            "TX01-RESPONSE.cpy",
+            "COMMON-RESPONSE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "INT-TX01-001",
+          "category": "INTEGRITY",
+          "rule_description": "Attempt account rollback on journal write error",
+          "condition": "WS-JRN-STATUS not = 00 after WRITE",
+          "action": "Set alert 9002, attempt ROLLBACK-ACCOUNT and stop; rollback rewrite success is not checked.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 79,
+              "snippet": "if WS-JRN-STATUS not = \"00\""
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 163,
+              "snippet": "perform ROLLBACK-ACCOUNT"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 214,
+              "snippet": "ROLLBACK-ACCOUNT."
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "INT-TX01-002",
+          "category": "INTEGRITY",
+          "rule_description": "Search for unused journal stamp",
+          "condition": "Candidate stamp constructed from date, time, terminal and sequence",
+          "action": "If journal READ returns 23, accept stamp; if 00, increment sequence and retry",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 177,
+              "snippet": "FIND-UNIQUE-STAMP."
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 187,
+              "snippet": "RCV-TRAN-TELLER-TERMINAL"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 197,
+              "snippet": "move 1 to WS-STAMP-FOUND"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 205,
+              "snippet": "add 1 to WS-SEQUENCE"
+            }
+          ],
+          "dependencies": [
+            "COMMON-RECEIVE.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "INT-TX01-003",
+          "category": "INTEGRITY",
+          "rule_description": "Reject exhausted journal sequence",
+          "condition": "Journal stamp duplicate and WS-SEQUENCE = 9999",
+          "action": "Set alert 1006, exit stamp search; MAIN checks alert and exits before account rewrite.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 199,
+              "snippet": "if WS-SEQUENCE = 9999"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 200,
+              "snippet": "move 1006 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "COMMON-RECEIVE.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "TECH-TX01-001",
+          "category": "TECHNICAL",
+          "rule_description": "Handle account file open error",
+          "condition": "OPEN ACCOUNT-FILE status not 00",
+          "action": "Alert 9001; Account file error; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 70,
+              "snippet": "open i-o ACCOUNT-FILE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 73,
+              "snippet": "move \"Account file error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "TECH-TX01-002",
+          "category": "TECHNICAL",
+          "rule_description": "Handle journal file open error",
+          "condition": "OPEN JOURNAL-FILE status not 00",
+          "action": "Alert 9002; Journal file error; close opened files; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 78,
+              "snippet": "open i-o JOURNAL-FILE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 81,
+              "snippet": "move \"Journal file error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "TECH-TX01-003",
+          "category": "TECHNICAL",
+          "rule_description": "Handle unexpected account read error",
+          "condition": "READ ACCOUNT-FILE status neither 00 nor 23",
+          "action": "Alert 9001; Account file error; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 88,
+              "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 98,
+              "snippet": "when other"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "TECH-TX01-004",
+          "category": "TECHNICAL",
+          "rule_description": "Handle account rewrite error",
+          "condition": "REWRITE ACCOUNT-RECORD status not 00",
+          "action": "Alert 9001; Account update error; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 141,
+              "snippet": "rewrite ACCOUNT-RECORD"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 145,
+              "snippet": "move \"Account update error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        },
+        {
+          "id": "TECH-TX01-005",
+          "category": "TECHNICAL",
+          "rule_description": "Handle journal stamp lookup error",
+          "condition": "Journal stamp READ status neither 00 nor 23",
+          "action": "Alert 9002; Journal file error; stop search and reject",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 193,
+              "snippet": "read JOURNAL-FILE key is JRN-STAMP"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 203,
+              "snippet": "exit perform"
+            }
+          ],
+          "dependencies": [
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      ],
+      "frozen_date": "2026-11-09",
+      "review_status": "previously_reviewed_with_project_owner; final source consistency checked; independent expert adjudication not claimed",
+      "source_files_sha256": {
+        "TX01.cbl": "661d2fb45093f9c02654b5c4a00ef7a70c7a4d1dc20ff53cee9247f0644c7f2c",
+        "ACCOUNT-RECORD.cpy": "8f3ab558dac3b6ff41d012b726ca38b51044088e82259195db4d7ad2f8c93fa5",
+        "JOURNAL-RECORD.cpy": "6c76faf89f608f4622e309b2ccaa42b44748ea6ee884f8e4b6671d623e027871",
+        "COMMON-RECEIVE.cpy": "9a1eff13e36460d4a9d5cdcaf21e0f9149936c7743a128b54b82c19919612bac",
+        "COMMON-RESPONSE.cpy": "1bba1549b8ff1cc4cad191626f240b25add25d5646b65b7f387a56d5c92a8c9e",
+        "TX01-RECEIVE.cpy": "c82281e51a970a3ecd98802ec3366a86a6345aa0548fc008bfa0b2a69dd8c17e",
+        "TX01-RESPONSE.cpy": "aea1fc0c61a1d60468b913c0d71ac2de83f668974414a3b2096e541d0bb401b5"
+      },
+      "source_validation": {
+        "source_evidence_snippets": "all line-numbered evidence snippets matched TX01.cbl",
+        "dependency_file_existence": "all referenced copybook filenames exist",
+        "behavioral_notes": [
+          "After FIND-UNIQUE-STAMP, MAIN checks RSP-ALERT-CODE and exits before rewriting account.",
+          "ROLLBACK-ACCOUNT does not verify rollback REWRITE success.",
+          "No transaction-wide atomicity guarantee is asserted."
+        ]
+      }
+    },
+    "gold_rule_count": 15,
+    "missing_gold_by_rag": [
+      "BR-TX01-007"
+    ],
+    "missing_gold_by_llm_only": [
+      "BR-TX01-007",
+      "INT-TX01-002"
+    ]
+  },
+  "evaluation_policy": {
+    "name": "Policy B v2",
+    "semantic_full": "Main condition, decision and primary effect correct; omitted non-determinative technical detail does not automatically downgrade.",
+    "partial": "Meaningful but insufficient semantic coverage",
+    "none": "No valid mapping to frozen Gold; can still be valid code behavior outside Gold",
+    "one_gold_mapping_per_extraction": true,
+    "duplicates": "FULL duplicate counted in semantic precision but not unique recall; penalized in primary F1",
+    "category": "Separate accuracy on FULL mappings, including duplicate FULL mappings",
+    "formulas": {
+      "semantic_precision": "F/N",
+      "unique_gold_recall": "U/M",
+      "semantic_f1": "2*P*R/(P+R)",
+      "duplicate_penalized_precision": "U/N",
+      "duplicate_penalized_f1": "2*U/(N+M)",
+      "category_accuracy": "FULL with correct category / F"
+    },
+    "evidence_fidelity": "Record paraphrase and missing code context separately; not an automatic semantic downgrade"
+  },
+  "rag": {
+    "method": "Gemini LLM+RAG",
+    "source_assembly": "11 MAIN rules from second intact MAIN generation plus 3 FIND-UNIQUE-STAMP, 1 ROLLBACK-ACCOUNT, 2 CLOSE-FILES rules from separate earlier generations",
+    "human_validation": [
+      {
+        "rag_id": "RAG-01",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 0,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-001",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "FULL confirmed. Initial malformed MAIN was not authoritative; use intact second MAIN run. Evidence provenance reviewed separately.",
+        "raw_extraction": {
+          "rule_description": "Validate transaction amount is greater than zero",
+          "condition": "RCV-AMOUNT = 0",
+          "action": "Set alert code 1004, alert message 'Invalid amount', and go back",
+          "evidence": "if RCV-AMOUNT = 0 move 1004 to RSP-ALERT-CODE move 'Invalid amount' to RSP-ALERT-MESSAGE goback end-if",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-001",
+          "category": "BUSINESS",
+          "rule_description": "Reject zero deposit amount",
+          "condition": "RCV-AMOUNT = 0",
+          "action": "Alert 1004; Invalid amount; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 64,
+              "snippet": "if RCV-AMOUNT = 0"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 65,
+              "snippet": "move 1004 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-02",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 1,
+        "human_label": "FULL",
+        "mapped_gold_id": "TECH-TX01-001",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "FULL confirmed after correcting source to second MAIN run; prior provisional PARTIAL superseded.",
+        "raw_extraction": {
+          "rule_description": "Handle account file open error",
+          "condition": "WS-ACC-STATUS not = '00'",
+          "action": "Set alert code 9001, alert message 'Account file error', and go back",
+          "evidence": "open i-o ACCOUNT-FILE if WS-ACC-STATUS not = '00' move 9001 to RSP-ALERT-CODE move 'Account file error' to RSP-ALERT-MESSAGE goback end-if",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": {
+          "id": "TECH-TX01-001",
+          "category": "TECHNICAL",
+          "rule_description": "Handle account file open error",
+          "condition": "OPEN ACCOUNT-FILE status not 00",
+          "action": "Alert 9001; Account file error; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 70,
+              "snippet": "open i-o ACCOUNT-FILE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 73,
+              "snippet": "move \"Account file error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-03",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 2,
+        "human_label": "FULL",
+        "mapped_gold_id": "TECH-TX01-002",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased, not verbatim COBOL.",
+        "raw_extraction": {
+          "rule_description": "Handle journal file open error",
+          "condition": "WS-JRN-STATUS not = '00'",
+          "action": "Set alert code 9002, alert message 'Journal file error', perform CLOSE-FILES, and go back",
+          "evidence": "open i-o JOURNAL-FILE if WS-JRN-STATUS not = '00' move 9002 to RSP-ALERT-CODE move 'Journal file error' to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": {
+          "id": "TECH-TX01-002",
+          "category": "TECHNICAL",
+          "rule_description": "Handle journal file open error",
+          "condition": "OPEN JOURNAL-FILE status not 00",
+          "action": "Alert 9002; Journal file error; close opened files; GOBACK",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 78,
+              "snippet": "open i-o JOURNAL-FILE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 81,
+              "snippet": "move \"Journal file error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-04",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 3,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-002",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased, not verbatim COBOL.",
+        "raw_extraction": {
+          "rule_description": "Handle account not found during read",
+          "condition": "WS-ACC-STATUS = '23'",
+          "action": "Set alert code 1001, alert message 'Account not found', perform CLOSE-FILES, and go back",
+          "evidence": "when '23' move 1001 to RSP-ALERT-CODE move 'Account not found' to RSP-ALERT-MESSAGE perform CLOSE-FILES goback",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-002",
+          "category": "BUSINESS",
+          "rule_description": "Account must exist",
+          "condition": "ACCOUNT-FILE READ returns status 23",
+          "action": "Alert 1001; Account not found; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 93,
+              "snippet": "when \"23\""
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 94,
+              "snippet": "move 1001 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-05",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 4,
+        "human_label": "FULL",
+        "mapped_gold_id": "TECH-TX01-003",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased; EVALUATE context omitted.",
+        "raw_extraction": {
+          "rule_description": "Handle unexpected account file status during read",
+          "condition": "WS-ACC-STATUS is other than '00' or '23'",
+          "action": "Set alert code 9001, alert message 'Account file error', perform CLOSE-FILES, and go back",
+          "evidence": "when other move 9001 to RSP-ALERT-CODE move 'Account file error' to RSP-ALERT-MESSAGE perform CLOSE-FILES goback",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": {
+          "id": "TECH-TX01-003",
+          "category": "TECHNICAL",
+          "rule_description": "Handle unexpected account read error",
+          "condition": "READ ACCOUNT-FILE status neither 00 nor 23",
+          "action": "Alert 9001; Account file error; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 88,
+              "snippet": "read ACCOUNT-FILE key is ACC-NUMBER"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 98,
+              "snippet": "when other"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-06",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 5,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-003",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Missing explicit GOBACK does not downgrade semantic FULL under Policy B v2.",
+        "raw_extraction": {
+          "rule_description": "Check for blocked account status",
+          "condition": "ACC-BLOCKED is true",
+          "action": "Set alert code 1002 and alert message 'Account blocked'",
+          "evidence": "when ACC-BLOCKED move 1002 to RSP-ALERT-CODE move 'Account blocked' to RSP-ALERT-MESSAGE",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-003",
+          "category": "BUSINESS",
+          "rule_description": "Reject blocked account",
+          "condition": "ACC-BLOCKED",
+          "action": "Alert 1002; Account blocked; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 106,
+              "snippet": "when ACC-BLOCKED"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 107,
+              "snippet": "move 1002 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-07",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 6,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-004",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased; omitted explicit stop not determinative.",
+        "raw_extraction": {
+          "rule_description": "Check for closed account status",
+          "condition": "ACC-CLOSED is true",
+          "action": "Set alert code 1003 and alert message 'Account closed'",
+          "evidence": "when ACC-CLOSED move 1003 to RSP-ALERT-CODE move 'Account closed' to RSP-ALERT-MESSAGE",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-004",
+          "category": "BUSINESS",
+          "rule_description": "Reject closed account",
+          "condition": "ACC-CLOSED",
+          "action": "Alert 1003; Account closed; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 109,
+              "snippet": "when ACC-CLOSED"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 110,
+              "snippet": "move 1003 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-08",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 7,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-005",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Status-check order after blocked and closed not explicit in individual rule; evidence paraphrased.",
+        "raw_extraction": {
+          "rule_description": "Check for invalid account status",
+          "condition": "not ACC-ACTIVE is true",
+          "action": "Set alert code 9001 and alert message 'Invalid account status'",
+          "evidence": "when not ACC-ACTIVE move 9001 to RSP-ALERT-CODE move 'Invalid account status' to RSP-ALERT-MESSAGE",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-005",
+          "category": "BUSINESS",
+          "rule_description": "Reject non-active account status",
+          "condition": "NOT ACC-ACTIVE, after blocked and closed checks",
+          "action": "Alert 9001; Invalid account status; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 112,
+              "snippet": "when not ACC-ACTIVE"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 114,
+              "snippet": "move \"Invalid account status\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-09",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 8,
+        "human_label": "FULL",
+        "mapped_gold_id": "BR-TX01-006",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased; exact 15-digit overflow threshold correctly captured.",
+        "raw_extraction": {
+          "rule_description": "Check for balance overflow after addition",
+          "condition": "WS-NEW-BALANCE > 999999999999999",
+          "action": "Set alert code 1005, alert message 'Balance overflow', perform CLOSE-FILES, and go back",
+          "evidence": "if WS-NEW-BALANCE > 999999999999999 move 1005 to RSP-ALERT-CODE move 'Balance overflow' to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "BR-TX01-006",
+          "category": "BUSINESS",
+          "rule_description": "Prevent 15-digit account balance overflow",
+          "condition": "WS-NEW-BALANCE > 999999999999999",
+          "action": "Alert 1005; Balance overflow; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 123,
+              "snippet": "compute WS-NEW-BALANCE ="
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 126,
+              "snippet": "if WS-NEW-BALANCE > 999999999999999"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "TX01-RECEIVE.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-10",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 9,
+        "human_label": "FULL",
+        "mapped_gold_id": "TECH-TX01-004",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Evidence paraphrased; rewrite status/error response correctly captured.",
+        "raw_extraction": {
+          "rule_description": "Handle account update error after rewrite",
+          "condition": "WS-ACC-STATUS not = '00'",
+          "action": "Set alert code 9001, alert message 'Account update error', perform CLOSE-FILES, and go back",
+          "evidence": "rewrite ACCOUNT-RECORD if WS-ACC-STATUS not = '00' move 9001 to RSP-ALERT-CODE move 'Account update error' to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": {
+          "id": "TECH-TX01-004",
+          "category": "TECHNICAL",
+          "rule_description": "Handle account rewrite error",
+          "condition": "REWRITE ACCOUNT-RECORD status not 00",
+          "action": "Alert 9001; Account update error; stop",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 141,
+              "snippet": "rewrite ACCOUNT-RECORD"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 145,
+              "snippet": "move \"Account update error\" to RSP-ALERT-MESSAGE"
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-11",
+        "source_file": "tx01_rag_main(1).json",
+        "source_rule_index": 10,
+        "human_label": "FULL",
+        "mapped_gold_id": "INT-TX01-001",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "ROLLBACK-ACCOUNT call is an attempt, not proof of successful rollback; evidence paraphrased.",
+        "raw_extraction": {
+          "rule_description": "Handle journal write error and maintain transaction consistency",
+          "condition": "WS-JRN-STATUS not = '00'",
+          "action": "Set alert code 9002, alert message 'Journal write error', perform ROLLBACK-ACCOUNT, perform CLOSE-FILES, and go back",
+          "evidence": "write JOURNAL-RECORD if WS-JRN-STATUS not = '00' move 9002 to RSP-ALERT-CODE move 'Journal write error' to RSP-ALERT-MESSAGE perform ROLLBACK-ACCOUNT perform CLOSE-FILES goback end-if",
+          "category": "INTEGRITY"
+        },
+        "gold_reference": {
+          "id": "INT-TX01-001",
+          "category": "INTEGRITY",
+          "rule_description": "Attempt account rollback on journal write error",
+          "condition": "WS-JRN-STATUS not = 00 after WRITE",
+          "action": "Set alert 9002, attempt ROLLBACK-ACCOUNT and stop; rollback rewrite success is not checked.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 79,
+              "snippet": "if WS-JRN-STATUS not = \"00\""
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 163,
+              "snippet": "perform ROLLBACK-ACCOUNT"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 214,
+              "snippet": "ROLLBACK-ACCOUNT."
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-12",
+        "source_file": "tx01_rag_find_unique_stamp.json",
+        "source_rule_index": 0,
+        "human_label": "FULL",
+        "mapped_gold_id": "INT-TX01-002",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Stamp construction components (date/time/terminal/sequence) not specified; increment-sequence behavior also appears in RAG-13; evidence abbreviated.",
+        "raw_extraction": {
+          "rule_description": "Validate stamp uniqueness by reading the journal file and looping until a unique stamp is found or exhausted",
+          "condition": "WS-STAMP-FOUND not equal to 1",
+          "action": "Reads journal file by stamp and evaluates WS-JRN-STATUS to determine if stamp is unique (status 23), existing (status 00), or error (other)",
+          "evidence": "perform until WS-STAMP-FOUND = 1 ... read JOURNAL-FILE key is JRN-STAMP",
+          "category": "INTEGRITY"
+        },
+        "gold_reference": {
+          "id": "INT-TX01-002",
+          "category": "INTEGRITY",
+          "rule_description": "Search for unused journal stamp",
+          "condition": "Candidate stamp constructed from date, time, terminal and sequence",
+          "action": "If journal READ returns 23, accept stamp; if 00, increment sequence and retry",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 177,
+              "snippet": "FIND-UNIQUE-STAMP."
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 187,
+              "snippet": "RCV-TRAN-TELLER-TERMINAL"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 197,
+              "snippet": "move 1 to WS-STAMP-FOUND"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 205,
+              "snippet": "add 1 to WS-SEQUENCE"
+            }
+          ],
+          "dependencies": [
+            "COMMON-RECEIVE.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-13",
+        "source_file": "tx01_rag_find_unique_stamp.json",
+        "source_rule_index": 1,
+        "human_label": "FULL",
+        "mapped_gold_id": "INT-TX01-003",
+        "category_match": false,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "Category mismatch BUSINESS vs Gold INTEGRITY; MAIN's subsequent alert check not explicit; partial overlap with RAG-12.",
+        "raw_extraction": {
+          "rule_description": "Handle duplicate journal stamp by incrementing sequence or raising exhaustion alert",
+          "condition": "WS-JRN-STATUS = \"00\"",
+          "action": "If sequence equals 9999, set alert code 1006 and message \"Journal stamp exhausted\" and exit perform; otherwise add 1 to WS-SEQUENCE",
+          "evidence": "when \"00\" if WS-SEQUENCE = 9999 move 1006 to RSP-ALERT-CODE move \"Journal stamp exhausted\" to RSP-ALERT-MESSAGE exit perform else add 1 to WS-SEQUENCE end-if",
+          "category": "BUSINESS"
+        },
+        "gold_reference": {
+          "id": "INT-TX01-003",
+          "category": "INTEGRITY",
+          "rule_description": "Reject exhausted journal sequence",
+          "condition": "Journal stamp duplicate and WS-SEQUENCE = 9999",
+          "action": "Set alert 1006, exit stamp search; MAIN checks alert and exits before account rewrite.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 199,
+              "snippet": "if WS-SEQUENCE = 9999"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 200,
+              "snippet": "move 1006 to RSP-ALERT-CODE"
+            }
+          ],
+          "dependencies": [
+            "COMMON-RECEIVE.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-14",
+        "source_file": "tx01_rag_find_unique_stamp.json",
+        "source_rule_index": 2,
+        "human_label": "FULL",
+        "mapped_gold_id": "TECH-TX01-005",
+        "category_match": true,
+        "duplicate_gold_coverage": false,
+        "reason_code": "SEMANTIC_MATCH",
+        "review_note": "MAIN final rejection not explicit; evidence omits full READ/EVALUATE context.",
+        "raw_extraction": {
+          "rule_description": "Handle journal file error during stamp uniqueness check",
+          "condition": "WS-JRN-STATUS is not \"23\" and not \"00\"",
+          "action": "Set alert code 9002, set message \"Journal file error\", and exit perform",
+          "evidence": "when other move 9002 to RSP-ALERT-CODE move \"Journal file error\" to RSP-ALERT-MESSAGE exit perform",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": {
+          "id": "TECH-TX01-005",
+          "category": "TECHNICAL",
+          "rule_description": "Handle journal stamp lookup error",
+          "condition": "Journal stamp READ status neither 00 nor 23",
+          "action": "Alert 9002; Journal file error; stop search and reject",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 193,
+              "snippet": "read JOURNAL-FILE key is JRN-STAMP"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 203,
+              "snippet": "exit perform"
+            }
+          ],
+          "dependencies": [
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-15",
+        "source_file": "tx01_rag_rollback_account.json",
+        "source_rule_index": 0,
+        "human_label": "FULL",
+        "mapped_gold_id": "INT-TX01-001",
+        "category_match": true,
+        "duplicate_gold_coverage": true,
+        "reason_code": "DUPLICATE_GOLD_COVERAGE",
+        "review_note": "Duplicate Gold coverage with RAG-11; adds rollback implementation details; REWRITE success is not checked.",
+        "raw_extraction": {
+          "rule_description": "Rollback account balance to old balance if account was updated and account read is successful during a rollback procedure",
+          "condition": "WS-ACCOUNT-UPDATED = 1 and WS-ACC-STATUS = \"00\"",
+          "action": "move WS-OLD-BALANCE to ACC-BALANCE and rewrite ACCOUNT-RECORD",
+          "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = \"00\" move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+          "category": "INTEGRITY"
+        },
+        "gold_reference": {
+          "id": "INT-TX01-001",
+          "category": "INTEGRITY",
+          "rule_description": "Attempt account rollback on journal write error",
+          "condition": "WS-JRN-STATUS not = 00 after WRITE",
+          "action": "Set alert 9002, attempt ROLLBACK-ACCOUNT and stop; rollback rewrite success is not checked.",
+          "evidence": [
+            {
+              "file": "TX01.cbl",
+              "line": 79,
+              "snippet": "if WS-JRN-STATUS not = \"00\""
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 163,
+              "snippet": "perform ROLLBACK-ACCOUNT"
+            },
+            {
+              "file": "TX01.cbl",
+              "line": 214,
+              "snippet": "ROLLBACK-ACCOUNT."
+            }
+          ],
+          "dependencies": [
+            "ACCOUNT-RECORD.cpy",
+            "JOURNAL-RECORD.cpy"
+          ],
+          "review_status": "previously_reviewed_source_consistent"
+        }
+      },
+      {
+        "rag_id": "RAG-16",
+        "source_file": "tx01_rag_close_files.json",
+        "source_rule_index": 0,
+        "human_label": "NONE",
+        "mapped_gold_id": null,
+        "category_match": null,
+        "duplicate_gold_coverage": false,
+        "reason_code": "VALID_EXTRACTION_OUTSIDE_FROZEN_GOLD",
+        "review_note": "VALID_EXTRACTION_OUTSIDE_FROZEN_GOLD; technically meaningful conditional journal close; evidence paraphrased without full paragraph context.",
+        "raw_extraction": {
+          "rule_description": "Close journal file if it is currently open",
+          "condition": "WS-JOURNAL-OPEN = 1",
+          "action": "Close JOURNAL-FILE and set WS-JOURNAL-OPEN to 0",
+          "evidence": "if WS-JOURNAL-OPEN = 1 close JOURNAL-FILE move 0 to WS-JOURNAL-OPEN end-if",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": null
+      },
+      {
+        "rag_id": "RAG-17",
+        "source_file": "tx01_rag_close_files.json",
+        "source_rule_index": 1,
+        "human_label": "NONE",
+        "mapped_gold_id": null,
+        "category_match": null,
+        "duplicate_gold_coverage": false,
+        "reason_code": "VALID_EXTRACTION_OUTSIDE_FROZEN_GOLD",
+        "review_note": "VALID_EXTRACTION_OUTSIDE_FROZEN_GOLD; technically meaningful conditional account close; evidence paraphrased without full paragraph context.",
+        "raw_extraction": {
+          "rule_description": "Close account file if it is currently open",
+          "condition": "WS-ACCOUNT-OPEN = 1",
+          "action": "Close ACCOUNT-FILE and set WS-ACCOUNT-OPEN to 0",
+          "evidence": "if WS-ACCOUNT-OPEN = 1 close ACCOUNT-FILE move 0 to WS-ACCOUNT-OPEN end-if",
+          "category": "TECHNICAL"
+        },
+        "gold_reference": null
+      }
+    ],
+    "metrics": {
+      "extracted_rules": 17,
+      "gold_rules": 15,
+      "full": 15,
+      "none": 2,
+      "unique_gold_covered": 14,
+      "semantic_precision": 0.882353,
+      "unique_gold_recall": 0.933333,
+      "semantic_f1": 0.907127,
+      "duplicate_penalized_precision": 0.823529,
+      "duplicate_penalized_f1": 0.875,
+      "category_accuracy": 0.933333,
+      "category_correct": 14
+    },
+    "duplicate_pair": [
+      "RAG-11",
+      "RAG-15"
+    ],
+    "category_mismatches": [
+      "RAG-13"
+    ],
+    "outside_gold": [
+      "RAG-16",
+      "RAG-17"
+    ]
+  },
+  "llm_only": {
+    "method": "Gemini LLM-only",
+    "raw_rules": [
+      {
+        "rule_description": "Transaction amount cannot be zero",
+        "condition": "RCV-AMOUNT = 0",
+        "action": "Move 1004 to RSP-ALERT-CODE, move Invalid amount to RSP-ALERT-MESSAGE, and goback",
+        "evidence": "if RCV-AMOUNT = 0\n        move 1004 to RSP-ALERT-CODE\n        move \"Invalid amount\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Account file open error handling",
+        "condition": "WS-ACC-STATUS not = 00",
+        "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, and goback",
+        "evidence": "open i-o ACCOUNT-FILE\n    if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account file error\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Journal file open error handling",
+        "condition": "WS-JRN-STATUS not = 00",
+        "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+        "evidence": "open i-o JOURNAL-FILE\n    if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal file error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Account not found check",
+        "condition": "WS-ACC-STATUS = 23",
+        "action": "Move 1001 to RSP-ALERT-CODE, move Account not found to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+        "evidence": "when \"23\"\n            move 1001 to RSP-ALERT-CODE\n            move \"Account not found\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Account file general error handling",
+        "condition": "WS-ACC-STATUS is other than 00 or 23",
+        "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+        "evidence": "when other\n            move 9001 to RSP-ALERT-CODE\n            move \"Account file error\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Blocked account validation",
+        "condition": "ACC-BLOCKED is true",
+        "action": "Move 1002 to RSP-ALERT-CODE and move Account blocked to RSP-ALERT-MESSAGE",
+        "evidence": "when ACC-BLOCKED\n            move 1002 to RSP-ALERT-CODE\n            move \"Account blocked\" to RSP-ALERT-MESSAGE",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Closed account validation",
+        "condition": "ACC-CLOSED is true",
+        "action": "Move 1003 to RSP-ALERT-CODE and move Account closed to RSP-ALERT-MESSAGE",
+        "evidence": "when ACC-CLOSED\n            move 1003 to RSP-ALERT-CODE\n            move \"Account closed\" to RSP-ALERT-MESSAGE",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Inactive account validation",
+        "condition": "not ACC-ACTIVE is true",
+        "action": "Move 9001 to RSP-ALERT-CODE and move Invalid account status to RSP-ALERT-MESSAGE",
+        "evidence": "when not ACC-ACTIVE\n            move 9001 to RSP-ALERT-CODE\n            move \"Invalid account status\" to RSP-ALERT-MESSAGE",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Balance overflow limit check",
+        "condition": "WS-NEW-BALANCE > 999999999999999",
+        "action": "Move 1005 to RSP-ALERT-CODE, move Balance overflow to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+        "evidence": "if WS-NEW-BALANCE > 999999999999999\n        move 1005 to RSP-ALERT-CODE\n        move \"Balance overflow\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+        "category": "BUSINESS"
+      },
+      {
+        "rule_description": "Account update error handling",
+        "condition": "WS-ACC-STATUS not = 00 after rewrite",
+        "action": "Move 9001 to RSP-ALERT-CODE, move Account update error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+        "evidence": "if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account update error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Journal write error rollback and handling",
+        "condition": "WS-JRN-STATUS not = 00 after writing journal record",
+        "action": "Move 9002 to RSP-ALERT-CODE, move Journal write error to RSP-ALERT-MESSAGE, perform ROLLBACK-ACCOUNT, perform CLOSE-FILES, and goback",
+        "evidence": "if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal write error\" to RSP-ALERT-MESSAGE\n        perform ROLLBACK-ACCOUNT\n        perform CLOSE-FILES\n        goback\n    end-if",
+        "category": "INTEGRITY"
+      },
+      {
+        "rule_description": "Journal stamp exhausted limit",
+        "condition": "WS-SEQUENCE = 9999 when journal stamp already exists",
+        "action": "Move 1006 to RSP-ALERT-CODE, move Journal stamp exhausted to RSP-ALERT-MESSAGE, and exit perform",
+        "evidence": "if WS-SEQUENCE = 9999\n                    move 1006 to RSP-ALERT-CODE\n                    move \"Journal stamp exhausted\"\n                        to RSP-ALERT-MESSAGE\n                    exit perform\n                end-if",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Journal file error during stamp generation",
+        "condition": "WS-JRN-STATUS is other than 00 or 23 during stamp lookup",
+        "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, and exit perform",
+        "evidence": "when other\n                move 9002 to RSP-ALERT-CODE\n                move \"Journal file error\"\n                    to RSP-ALERT-MESSAGE\n                exit perform",
+        "category": "TECHNICAL"
+      },
+      {
+        "rule_description": "Account balance rollback on failure",
+        "condition": "WS-ACCOUNT-UPDATED = 1 and account is successfully read during rollback",
+        "action": "Restore ACC-BALANCE to WS-OLD-BALANCE and rewrite ACCOUNT-RECORD",
+        "evidence": "ROLLBACK-ACCOUNT.\n    if WS-ACCOUNT-UPDATED = 1\n        move RCV-ACCOUNT-NUMBER to ACC-NUMBER\n        read ACCOUNT-FILE key is ACC-NUMBER\n        if WS-ACC-STATUS = \"00\"\n            move WS-OLD-BALANCE to ACC-BALANCE\n            rewrite ACCOUNT-RECORD\n        end-if\n    end-if.",
+        "category": "INTEGRITY"
+      }
+    ],
+    "metrics": {
+      "extracted_rules": 14,
+      "gold_rules": 15,
+      "full": 14,
+      "none": 0,
+      "unique_gold_covered": 13,
+      "semantic_precision": 1.0,
+      "unique_gold_recall": 0.866667,
+      "semantic_f1": 0.928571,
+      "duplicate_penalized_precision": 0.928571,
+      "duplicate_penalized_f1": 0.896552,
+      "category_accuracy": 0.928571,
+      "category_correct": 13
+    },
+    "review_summary": "14 FULL of 14; one duplicate INT-TX01-001 (LLM-11 and LLM-14); one category mismatch LLM-12 (TECHNICAL vs Gold INTEGRITY).",
+    "per_rule_review_note": "Detailed individual LLM-only human review mappings are not reproduced here because not all exact per-rule mappings were available from the verified source files; preserve original review record if available."
+  },
+  "comparison": {
+    "primary_metric": "duplicate_penalized_f1",
+    "winner_on_primary_metric": "LLM-only",
+    "rag_minus_llm": {
+      "unique_gold_recall": 0.066666,
+      "duplicate_penalized_f1": -0.021552
+    },
+    "interpretation": "RAG covers one additional Gold rule but produces two outside-Gold outputs and one duplicate; LLM-only has slightly higher primary F1."
+  },
+  "methodological_limitations": [
+    "RAG is a hybrid assembly of separate generation runs, not a controlled single generation.",
+    "Canonical MAIN is tx01_rag_main(1).json; earlier malformed MAIN and combined_raw are not canonical.",
+    "Cause of malformed earlier MAIN is unknown; do not attribute to network.",
+    "RAG had six copybooks while LLM-only did not; conditions were not fully equal.",
+    "Gold Standard was assistant-assisted and user-reviewed, not independently blinded.",
+    "Semantic FULL/PARTIAL/NONE were human-approved in conversation, not independently adjudicated.",
+    "Older provisional hybrid experiment metrics and draft labels are superseded by this record, not silently overwritten.",
+    "Outside-Gold NONE may represent valid extraction rather than hallucination; frozen Gold remains unchanged.",
+    "RAG-15 FULL reflects correct rollback subbehavior but not all Gold trigger details; decision follows agreed lenient policy."
+  ],
+  "source_file_names": [
+    "tx01_rag_main(1).json",
+    "tx01_rag_find_unique_stamp.json",
+    "tx01_rag_rollback_account.json",
+    "tx01_rag_close_files.json",
+    "tx01_gold_standard_v1.0(3).json",
+    "tx01_llm_rules(4).json",
+    "tx01_rag_hybrid_experiment_log_v1.json"
+  ],
+  "next_step": "TX02 Withdrawal: use frozen TX02 gold, review source/input parity, then same Policy B v2 one rule at a time."
+}

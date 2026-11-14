@@ -1,0 +1,30 @@
+[
+  {
+    "rule_description": "Verify unique journal stamp availability",
+    "condition": "WS-JRN-STATUS is equal to 23",
+    "action": "Set WS-STAMP-FOUND to 1",
+    "evidence": "when 23 move 1 to WS-STAMP-FOUND",
+    "category": "INTEGRITY"
+  },
+  {
+    "rule_description": "Increment transaction sequence when journal stamp already exists",
+    "condition": "WS-JRN-STATUS is equal to 00 and WS-SEQUENCE is not 9999",
+    "action": "Add 1 to WS-SEQUENCE",
+    "evidence": "when 00 if WS-SEQUENCE = 9999 ... else add 1 to WS-SEQUENCE end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "rule_description": "Exhaust journal stamp alert when sequence reaches maximum",
+    "condition": "WS-JRN-STATUS is equal to 00 and WS-SEQUENCE equals 9999",
+    "action": "Set alert code to 1006, set message to Journal stamp exhausted, and exit perform",
+    "evidence": "when 00 if WS-SEQUENCE = 9999 move 1006 to RSP-ALERT-CODE move Journal stamp exhausted to RSP-ALERT-MESSAGE exit perform end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Journal file error handling during stamp generation",
+    "condition": "WS-JRN-STATUS is any other status than 00 or 23",
+    "action": "Set alert code to 9002, set message to Journal file error, and exit perform",
+    "evidence": "when other move 9002 to RSP-ALERT-CODE move Journal file error to RSP-ALERT-MESSAGE exit perform",
+    "category": "TECHNICAL"
+  }
+]

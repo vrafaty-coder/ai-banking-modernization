@@ -1,0 +1,221 @@
+You are analyzing a legacy COBOL banking program.
+
+Extract the business rules explicitly implemented in the source code.
+
+For each rule, provide:
+1. Rule description
+2. Condition
+3. Action or outcome
+4. Evidence from the COBOL source
+
+Do not invent rules.
+Do not use external banking assumptions.
+If a rule cannot be verified from the code, do not include it.
+
+Return the extracted rules as valid JSON, not Markdown.
+
+Classify each extracted rule into exactly one category:
+
+BUSINESS: Banking policies, transaction conditions,
+account eligibility, and financial limits.
+
+TECHNICAL: File operations, system errors,
+and technical exception handling.
+
+INTEGRITY: Rules that preserve transaction consistency,
+account balances, and journal integrity.
+
+Do not invent rules. Base each classification
+on the COBOL source evidence.
+
+Extract rules implemented in CLOSE-FILES.
+Use other retrieved paragraphs only to understand calls and outcomes.
+Do not report unrelated rules from those paragraphs.
+
+COBOL SOURCE:
+PARAGRAPH: MAIN
+MAIN.
+    initialize TX02-RESPONSE
+    move "TX02" to RSP-TRAN-CODE
+    move 1 to RSP-STATUS-CODE
+
+    move 0 to WS-ACCOUNT-OPEN
+              WS-JOURNAL-OPEN
+              WS-ACCOUNT-UPDATED
+
+    if RCV-AMOUNT = 0
+        move 1004 to RSP-ALERT-CODE
+        move "Invalid amount" to RSP-ALERT-MESSAGE
+        goback
+    end-if
+
+    open i-o ACCOUNT-FILE
+    if WS-ACC-STATUS not = "00"
+        move 9001 to RSP-ALERT-CODE
+        move "Account file error" to RSP-ALERT-MESSAGE
+        goback
+    end-if
+    move 1 to WS-ACCOUNT-OPEN
+
+    open i-o JOURNAL-FILE
+    if WS-JRN-STATUS not = "00"
+        move 9002 to RSP-ALERT-CODE
+        move "Journal file error" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+    move 1 to WS-JOURNAL-OPEN
+
+    move RCV-ACCOUNT-NUMBER to ACC-NUMBER
+    read ACCOUNT-FILE key is ACC-NUMBER
+
+    evaluate WS-ACC-STATUS
+        when "00"
+            continue
+        when "23"
+            move 1001 to RSP-ALERT-CODE
+            move "Account not found" to RSP-ALERT-MESSAGE
+            perform CLOSE-FILES
+            goback
+        when other
+            move 9001 to RSP-ALERT-CODE
+            move "Account file error" to RSP-ALERT-MESSAGE
+            perform CLOSE-FILES
+            goback
+    end-evaluate
+
+    evaluate true
+        when ACC-BLOCKED
+            move 1002 to RSP-ALERT-CODE
+            move "Account blocked" to RSP-ALERT-MESSAGE
+        when ACC-CLOSED
+            move 1003 to RSP-ALERT-CODE
+            move "Account closed" to RSP-ALERT-MESSAGE
+        when not ACC-ACTIVE
+            move 9001 to RSP-ALERT-CODE
+            move "Invalid account status" to RSP-ALERT-MESSAGE
+    end-evaluate
+
+    if RSP-ALERT-CODE not = 0
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move ACC-BALANCE to WS-OLD-BALANCE
+    if ACC-BALANCE < RCV-AMOUNT
+        move 1007 to RSP-ALERT-CODE
+        move "Insufficient funds" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    compute WS-NEW-BALANCE =
+        ACC-BALANCE - RCV-AMOUNT
+
+    if WS-NEW-BALANCE > 999999999999999
+        move 1005 to RSP-ALERT-CODE
+        move "Balance overflow" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    perform FIND-UNIQUE-STAMP
+
+    if RSP-ALERT-CODE not = 0
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move WS-NEW-BALANCE to ACC-BALANCE
+    rewrite ACCOUNT-RECORD
+
+    if WS-ACC-STATUS not = "00"
+        move 9001 to RSP-ALERT-CODE
+        move "Account update error" to RSP-ALERT-MESSAGE
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move 1 to WS-ACCOUNT-UPDATED
+
+    initialize JOURNAL-RECORD
+    move WS-STAMP to JRN-STAMP
+    move "TX02" to JRN-TRAN-CODE
+    move RCV-ACCOUNT-NUMBER to JRN-DB-ACCOUNT
+    move RCV-AMOUNT to JRN-AMOUNT
+
+    write JOURNAL-RECORD
+
+    if WS-JRN-STATUS not = "00"
+        move 9002 to RSP-ALERT-CODE
+        move "Journal write error" to RSP-ALERT-MESSAGE
+        perform ROLLBACK-ACCOUNT
+        perform CLOSE-FILES
+        goback
+    end-if
+
+    move 0 to RSP-STATUS-CODE
+              RSP-ALERT-CODE
+    move spaces to RSP-ALERT-MESSAGE
+    move WS-NEW-BALANCE to RSP-ACCOUNT-BALANCE
+    move WS-STAMP to RSP-JOURNAL-STAMP
+
+    perform CLOSE-FILES
+    goback.
+
+PARAGRAPH: CLOSE-FILES
+CLOSE-FILES.
+    if WS-JOURNAL-OPEN = 1
+        close JOURNAL-FILE
+        move 0 to WS-JOURNAL-OPEN
+    end-if
+    if WS-ACCOUNT-OPEN = 1
+        close ACCOUNT-FILE
+        move 0 to WS-ACCOUNT-OPEN
+    end-if.
+
+COPYBOOK: ACCOUNT-RECORD.cpy
+01 ACCOUNT-RECORD.
+   05 ACC-NUMBER       PIC X(13).
+   05 ACC-STATUS       PIC X(01).
+      88 ACC-ACTIVE    VALUE 'A'.
+      88 ACC-BLOCKED   VALUE 'B'.
+      88 ACC-CLOSED    VALUE 'C'.
+   05 ACC-CURRENCY     PIC X(03).
+   05 ACC-BALANCE      PIC 9(15).
+
+
+COPYBOOK: COMMON-RECEIVE.cpy
+       05 RCV-TRAN-CODE             PIC X(04).
+       05 RCV-TRAN-DATE             PIC 9(08).
+       05 RCV-TRAN-TIME             PIC 9(06).
+       05 RCV-TRAN-TELLER-TERMINAL  PIC X(04).
+       05 RCV-TRAN-SEQUENCE         PIC 9(04).
+
+
+COPYBOOK: COMMON-RESPONSE.cpy
+       05 RSP-TRAN-CODE             PIC X(04).
+       05 RSP-STATUS-CODE           PIC 9(02).
+       05 RSP-ALERT-CODE            PIC 9(04).
+       05 RSP-ALERT-MESSAGE         PIC X(50).
+
+
+COPYBOOK: JOURNAL-RECORD.cpy
+       01 JOURNAL-RECORD.
+          05 JRN-STAMP         PIC X(22).
+          05 JRN-TRAN-CODE     PIC X(04).
+          05 JRN-CR-ACCOUNT    PIC X(13).
+          05 JRN-DB-ACCOUNT    PIC X(13).
+          05 JRN-AMOUNT        PIC 9(15).
+
+
+COPYBOOK: TX02-RECEIVE.cpy
+
+05 RCV-ACCOUNT-NUMBER PIC X(13).
+05 RCV-AMOUNT         PIC 9(15).
+
+
+COPYBOOK: TX02-RESPONSE.cpy
+
+05 RSP-ACCOUNT-BALANCE PIC 9(15).
+05 RSP-JOURNAL-STAMP   PIC X(22).

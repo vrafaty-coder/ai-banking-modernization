@@ -1,0 +1,9 @@
+[
+  {
+    "rule_description": "Rollback account balance to old balance if account was updated during the transaction and journal write fails.",
+    "condition": "WS-ACCOUNT-UPDATED = 1 and WS-ACC-STATUS = 00 after reading account file in ROLLBACK-ACCOUNT",
+    "action": "Move WS-OLD-BALANCE to ACC-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = 00 move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+    "category": "INTEGRITY"
+  }
+]

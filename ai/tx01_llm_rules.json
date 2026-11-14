@@ -1,0 +1,100 @@
+[
+  {
+    "rule_description": "Transaction amount cannot be zero",
+    "condition": "RCV-AMOUNT = 0",
+    "action": "Move 1004 to RSP-ALERT-CODE, move Invalid amount to RSP-ALERT-MESSAGE, and goback",
+    "evidence": "if RCV-AMOUNT = 0\n        move 1004 to RSP-ALERT-CODE\n        move \"Invalid amount\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account file open error handling",
+    "condition": "WS-ACC-STATUS not = 00",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, and goback",
+    "evidence": "open i-o ACCOUNT-FILE\n    if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account file error\" to RSP-ALERT-MESSAGE\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal file open error handling",
+    "condition": "WS-JRN-STATUS not = 00",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "open i-o JOURNAL-FILE\n    if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal file error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Account not found check",
+    "condition": "WS-ACC-STATUS = 23",
+    "action": "Move 1001 to RSP-ALERT-CODE, move Account not found to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "when \"23\"\n            move 1001 to RSP-ALERT-CODE\n            move \"Account not found\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account file general error handling",
+    "condition": "WS-ACC-STATUS is other than 00 or 23",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account file error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "when other\n            move 9001 to RSP-ALERT-CODE\n            move \"Account file error\" to RSP-ALERT-MESSAGE\n            perform CLOSE-FILES\n            goback",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Blocked account validation",
+    "condition": "ACC-BLOCKED is true",
+    "action": "Move 1002 to RSP-ALERT-CODE and move Account blocked to RSP-ALERT-MESSAGE",
+    "evidence": "when ACC-BLOCKED\n            move 1002 to RSP-ALERT-CODE\n            move \"Account blocked\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Closed account validation",
+    "condition": "ACC-CLOSED is true",
+    "action": "Move 1003 to RSP-ALERT-CODE and move Account closed to RSP-ALERT-MESSAGE",
+    "evidence": "when ACC-CLOSED\n            move 1003 to RSP-ALERT-CODE\n            move \"Account closed\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Inactive account validation",
+    "condition": "not ACC-ACTIVE is true",
+    "action": "Move 9001 to RSP-ALERT-CODE and move Invalid account status to RSP-ALERT-MESSAGE",
+    "evidence": "when not ACC-ACTIVE\n            move 9001 to RSP-ALERT-CODE\n            move \"Invalid account status\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Balance overflow limit check",
+    "condition": "WS-NEW-BALANCE > 999999999999999",
+    "action": "Move 1005 to RSP-ALERT-CODE, move Balance overflow to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-NEW-BALANCE > 999999999999999\n        move 1005 to RSP-ALERT-CODE\n        move \"Balance overflow\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "rule_description": "Account update error handling",
+    "condition": "WS-ACC-STATUS not = 00 after rewrite",
+    "action": "Move 9001 to RSP-ALERT-CODE, move Account update error to RSP-ALERT-MESSAGE, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-ACC-STATUS not = \"00\"\n        move 9001 to RSP-ALERT-CODE\n        move \"Account update error\" to RSP-ALERT-MESSAGE\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal write error rollback and handling",
+    "condition": "WS-JRN-STATUS not = 00 after writing journal record",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal write error to RSP-ALERT-MESSAGE, perform ROLLBACK-ACCOUNT, perform CLOSE-FILES, and goback",
+    "evidence": "if WS-JRN-STATUS not = \"00\"\n        move 9002 to RSP-ALERT-CODE\n        move \"Journal write error\" to RSP-ALERT-MESSAGE\n        perform ROLLBACK-ACCOUNT\n        perform CLOSE-FILES\n        goback\n    end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "rule_description": "Journal stamp exhausted limit",
+    "condition": "WS-SEQUENCE = 9999 when journal stamp already exists",
+    "action": "Move 1006 to RSP-ALERT-CODE, move Journal stamp exhausted to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "if WS-SEQUENCE = 9999\n                    move 1006 to RSP-ALERT-CODE\n                    move \"Journal stamp exhausted\"\n                        to RSP-ALERT-MESSAGE\n                    exit perform\n                end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Journal file error during stamp generation",
+    "condition": "WS-JRN-STATUS is other than 00 or 23 during stamp lookup",
+    "action": "Move 9002 to RSP-ALERT-CODE, move Journal file error to RSP-ALERT-MESSAGE, and exit perform",
+    "evidence": "when other\n                move 9002 to RSP-ALERT-CODE\n                move \"Journal file error\"\n                    to RSP-ALERT-MESSAGE\n                exit perform",
+    "category": "TECHNICAL"
+  },
+  {
+    "rule_description": "Account balance rollback on failure",
+    "condition": "WS-ACCOUNT-UPDATED = 1 and account is successfully read during rollback",
+    "action": "Restore ACC-BALANCE to WS-OLD-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "ROLLBACK-ACCOUNT.\n    if WS-ACCOUNT-UPDATED = 1\n        move RCV-ACCOUNT-NUMBER to ACC-NUMBER\n        read ACCOUNT-FILE key is ACC-NUMBER\n        if WS-ACC-STATUS = \"00\"\n            move WS-OLD-BALANCE to ACC-BALANCE\n            rewrite ACCOUNT-RECORD\n        end-if\n    end-if.",
+    "category": "INTEGRITY"
+  }
+]

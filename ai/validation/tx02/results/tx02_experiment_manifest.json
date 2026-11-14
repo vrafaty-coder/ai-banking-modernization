@@ -1,0 +1,42 @@
+﻿{
+  "experiment_id": "TX02-LLM-RAG-JAVA-VALIDATION",
+  "transaction": "TX02 Withdrawal",
+  "java_generation_method": "LLM+RAG",
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "validation_gate": {
+    "version": "V2",
+    "scenarios": 16,
+    "dimensions": [
+      "RESPONSE",
+      "ACCOUNT",
+      "JOURNAL",
+      "BUSINESS_RULE"
+    ],
+    "frozen_source_sha256": "7F41BA397836DBD167C67BD030608BC8C4EDA753F9482653F924C9224F66AB39"
+  },
+  "original_java": {
+    "directory": "ai/java_generation/tx02_rag_v1",
+    "pass": 54,
+    "fail": 10,
+    "results_sha256": "CDAEC8820F2C4C429178F0E26B54D1621B7C1D3DD692BBC1BFD4F4A6E7B67E04"
+  },
+  "corrected_java": {
+    "directory": "ai/java_generation/tx02_corrected_v1",
+    "service_sha256": "DBBCC64C5F7138C0EA9B4211C507B499E23904CABE0CB5C80A510B2BC3BB1117",
+    "pass": 64,
+    "fail": 0,
+    "results_sha256": "703893CF04BF05E8037866A36EAD876C9C6C44384133E8EAE89CDF8882E998EE"
+  },
+  "confirmed_mismatch": {
+    "type": "Response contract mismatch",
+    "affected_scenarios": ["S09", "S10", "S11", "S12", "S15"],
+    "description": "Generated Java returned an attempted journal stamp on failure paths, whereas the COBOL reference initialized the response and assigned the journal stamp only on successful completion.",
+    "correction": "Separated internal journal stamp from response journal stamp and assigned the response stamp only after successful journal write."
+  },
+  "limitations": [
+    "Validation covers 16 defined scenarios, not all possible executions.",
+    "BUSINESS_RULE is a composite validation dimension.",
+    "S12 retains the reference behavior of an unsuccessful rollback, which can leave an unjournaled debit."
+  ]
+}

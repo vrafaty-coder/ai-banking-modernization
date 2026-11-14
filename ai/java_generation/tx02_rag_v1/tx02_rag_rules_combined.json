@@ -1,0 +1,173 @@
+[
+  {
+    "source_context": "MAIN",
+    "source_index": 1,
+    "rule_description": "Verify transaction amount is not zero",
+    "condition": "RCV-AMOUNT = 0",
+    "action": "Set alert code to 1004, alert message to Invalid amount, and go back",
+    "evidence": "if RCV-AMOUNT = 0 move 1004 to RSP-ALERT-CODE move \"Invalid amount\" to RSP-ALERT-MESSAGE goback end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 2,
+    "rule_description": "Check account file open status",
+    "condition": "WS-ACC-STATUS not = 00 after opening ACCOUNT-FILE",
+    "action": "Set alert code to 9001, alert message to Account file error, and go back",
+    "evidence": "if WS-ACC-STATUS not = \"00\" move 9001 to RSP-ALERT-CODE move \"Account file error\" to RSP-ALERT-MESSAGE goback end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 3,
+    "rule_description": "Check journal file open status",
+    "condition": "WS-JRN-STATUS not = 00 after opening JOURNAL-FILE",
+    "action": "Set alert code to 9002, alert message to Journal file error, perform CLOSE-FILES, and go back",
+    "evidence": "if WS-JRN-STATUS not = \"00\" move 9002 to RSP-ALERT-CODE move \"Journal file error\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 4,
+    "rule_description": "Verify account exists",
+    "condition": "WS-ACC-STATUS evaluates to status 23 on account read",
+    "action": "Set alert code to 1001, alert message to Account not found, perform CLOSE-FILES, and go back",
+    "evidence": "when \"23\" move 1001 to RSP-ALERT-CODE move \"Account not found\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 5,
+    "rule_description": "Handle unexpected account file errors",
+    "condition": "WS-ACC-STATUS is neither 00 nor 23 on account read",
+    "action": "Set alert code to 9001, alert message to Account file error, perform CLOSE-FILES, and go back",
+    "evidence": "when other move 9001 to RSP-ALERT-CODE move \"Account file error\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 6,
+    "rule_description": "Check if account is blocked",
+    "condition": "ACC-BLOCKED is true",
+    "action": "Set alert code to 1002 and alert message to Account blocked",
+    "evidence": "when ACC-BLOCKED move 1002 to RSP-ALERT-CODE move \"Account blocked\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 7,
+    "rule_description": "Check if account is closed",
+    "condition": "ACC-CLOSED is true",
+    "action": "Set alert code to 1003 and alert message to Account closed",
+    "evidence": "when ACC-CLOSED move 1003 to RSP-ALERT-CODE move \"Account closed\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 8,
+    "rule_description": "Verify account is active",
+    "condition": "ACC-ACTIVE is not true",
+    "action": "Set alert code to 9001 and alert message to Invalid account status",
+    "evidence": "when not ACC-ACTIVE move 9001 to RSP-ALERT-CODE move \"Invalid account status\" to RSP-ALERT-MESSAGE",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 9,
+    "rule_description": "Verify sufficient funds for withdrawal",
+    "condition": "ACC-BALANCE < RCV-AMOUNT",
+    "action": "Set alert code to 1007, alert message to Insufficient funds, perform CLOSE-FILES, and go back",
+    "evidence": "if ACC-BALANCE < RCV-AMOUNT move 1007 to RSP-ALERT-CODE move \"Insufficient funds\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 10,
+    "rule_description": "Check balance overflow after computation",
+    "condition": "WS-NEW-BALANCE > 999999999999999",
+    "action": "Set alert code to 1005, alert message to Balance overflow, perform CLOSE-FILES, and go back",
+    "evidence": "if WS-NEW-BALANCE > 999999999999999 move 1005 to RSP-ALERT-CODE move \"Balance overflow\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 11,
+    "rule_description": "Check account rewrite status",
+    "condition": "WS-ACC-STATUS not = 00 after rewriting ACCOUNT-RECORD",
+    "action": "Set alert code to 9001, alert message to Account update error, perform CLOSE-FILES, and go back",
+    "evidence": "if WS-ACC-STATUS not = \"00\" move 9001 to RSP-ALERT-CODE move \"Account update error\" to RSP-ALERT-MESSAGE perform CLOSE-FILES goback end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "source_context": "MAIN",
+    "source_index": 12,
+    "rule_description": "Check journal write status and rollback on failure",
+    "condition": "WS-JRN-STATUS not = 00 after writing JOURNAL-RECORD",
+    "action": "Set alert code to 9002, alert message to Journal write error, perform ROLLBACK-ACCOUNT, perform CLOSE-FILES, and go back",
+    "evidence": "if WS-JRN-STATUS not = \"00\" move 9002 to RSP-ALERT-CODE move \"Journal write error\" to RSP-ALERT-MESSAGE perform ROLLBACK-ACCOUNT perform CLOSE-FILES goback end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "source_context": "FIND_UNIQUE_STAMP",
+    "source_index": 1,
+    "rule_description": "Verify unique journal stamp availability",
+    "condition": "WS-JRN-STATUS is equal to 23",
+    "action": "Set WS-STAMP-FOUND to 1",
+    "evidence": "when 23 move 1 to WS-STAMP-FOUND",
+    "category": "INTEGRITY"
+  },
+  {
+    "source_context": "FIND_UNIQUE_STAMP",
+    "source_index": 2,
+    "rule_description": "Increment transaction sequence when journal stamp already exists",
+    "condition": "WS-JRN-STATUS is equal to 00 and WS-SEQUENCE is not 9999",
+    "action": "Add 1 to WS-SEQUENCE",
+    "evidence": "when 00 if WS-SEQUENCE = 9999 ... else add 1 to WS-SEQUENCE end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "source_context": "FIND_UNIQUE_STAMP",
+    "source_index": 3,
+    "rule_description": "Exhaust journal stamp alert when sequence reaches maximum",
+    "condition": "WS-JRN-STATUS is equal to 00 and WS-SEQUENCE equals 9999",
+    "action": "Set alert code to 1006, set message to Journal stamp exhausted, and exit perform",
+    "evidence": "when 00 if WS-SEQUENCE = 9999 move 1006 to RSP-ALERT-CODE move Journal stamp exhausted to RSP-ALERT-MESSAGE exit perform end-if",
+    "category": "BUSINESS"
+  },
+  {
+    "source_context": "FIND_UNIQUE_STAMP",
+    "source_index": 4,
+    "rule_description": "Journal file error handling during stamp generation",
+    "condition": "WS-JRN-STATUS is any other status than 00 or 23",
+    "action": "Set alert code to 9002, set message to Journal file error, and exit perform",
+    "evidence": "when other move 9002 to RSP-ALERT-CODE move Journal file error to RSP-ALERT-MESSAGE exit perform",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "ROLLBACK_ACCOUNT",
+    "source_index": 1,
+    "rule_description": "Rollback account balance to old balance if account was previously updated during an error",
+    "condition": "WS-ACCOUNT-UPDATED = 1 and WS-ACC-STATUS = 00 after reading ACCOUNT-FILE",
+    "action": "Move WS-OLD-BALANCE to ACC-BALANCE and rewrite ACCOUNT-RECORD",
+    "evidence": "if WS-ACCOUNT-UPDATED = 1 move RCV-ACCOUNT-NUMBER to ACC-NUMBER read ACCOUNT-FILE key is ACC-NUMBER if WS-ACC-STATUS = 00 move WS-OLD-BALANCE to ACC-BALANCE rewrite ACCOUNT-RECORD end-if end-if",
+    "category": "INTEGRITY"
+  },
+  {
+    "source_context": "CLOSE_FILES",
+    "source_index": 1,
+    "rule_description": "Close JOURNAL-FILE if it is currently open",
+    "condition": "WS-JOURNAL-OPEN = 1",
+    "action": "Close JOURNAL-FILE and set WS-JOURNAL-OPEN to 0",
+    "evidence": "if WS-JOURNAL-OPEN = 1 close JOURNAL-FILE move 0 to WS-JOURNAL-OPEN end-if",
+    "category": "TECHNICAL"
+  },
+  {
+    "source_context": "CLOSE_FILES",
+    "source_index": 2,
+    "rule_description": "Close ACCOUNT-FILE if it is currently open",
+    "condition": "WS-ACCOUNT-OPEN = 1",
+    "action": "Close ACCOUNT-FILE and set WS-ACCOUNT-OPEN to 0",
+    "evidence": "if WS-ACCOUNT-OPEN = 1 close ACCOUNT-FILE move 0 to WS-ACCOUNT-OPEN end-if",
+    "category": "TECHNICAL"
+  }
+]

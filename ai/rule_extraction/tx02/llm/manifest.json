@@ -1,0 +1,10 @@
+{
+  "program": "TX02",
+  "mode": "llm",
+  "source_sha256": "15d3e89b60fb4e18b298be9796e75e298372f6448a5256b532b1cbfc072af322",
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "contexts": [
+    "FULL_PROGRAM"
+  ]
+}

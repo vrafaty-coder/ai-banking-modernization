@@ -1,0 +1,9 @@
+{
+  "program": "TX02",
+  "cobol_file": "cobol/programs/TX02.cbl",
+  "copybook_dir": "cobol/copybooks",
+  "copybooks": ["ACCOUNT-RECORD.cpy", "COMMON-RECEIVE.cpy", "COMMON-RESPONSE.cpy", "JOURNAL-RECORD.cpy", "TX02-RECEIVE.cpy", "TX02-RESPONSE.cpy"],
+  "source_sha256": "15d3e89b60fb4e18b298be9796e75e298372f6448a5256b532b1cbfc072af322",
+  "model": "gemini-3.5-flash-lite",
+  "output_dir": "ai/rule_extraction/tx02"
+}
