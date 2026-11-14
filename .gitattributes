@@ -1,0 +1,21 @@
+# Default text handling
+* text=auto
+
+# Bash scripts must use LF
+*.sh text eol=lf
+
+# Source code and structured research artifacts
+*.py text eol=lf
+*.java text eol=lf
+*.cbl text eol=lf
+*.cpy text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Binary research artifacts
+*.docx binary
+*.zip binary
